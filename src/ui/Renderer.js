@@ -4,9 +4,10 @@ import { soundManager } from './SoundManager.js';
 import { isFlower, getTileName } from '../core/Tile.js';
 
 export class Renderer {
-  constructor(controller) {
+  constructor(controller, socketClient = null) {
     this.controller = controller;
-    this.state = controller.state;
+    this.state = controller ? controller.state : null;
+    this.socketClient = socketClient;
     this.selectedChowOption = null;
 
     // Cache DOM Elements
@@ -500,6 +501,11 @@ export class Renderer {
    * Triggered when a tile in the human player's hand is clicked.
    */
   handleTileClick(tile) {
+    if (this.socketClient && this.socketClient.isMultiplayer) {
+      this.socketClient.discardTile(tile.id);
+      return;
+    }
+
     if (this.state.phase !== GamePhase.PLAYING || this.state.currentPlayerIndex !== 0) {
       return; // Not your turn
     }
@@ -520,6 +526,12 @@ export class Renderer {
    * Triggered when an action HUD button is clicked.
    */
   handleActionClick(action) {
+    if (this.socketClient && this.socketClient.isMultiplayer) {
+      this.actionHud.classList.add('hidden');
+      this.socketClient.declareAction(action);
+      return;
+    }
+
     const p = this.state.players[0];
     const discTile = this.state.discardedTile;
     const jinTemplate = this.state.wall.jinTile;

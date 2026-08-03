@@ -1,0 +1,22 @@
+{
+  "name": "fzmahjong",
+  "version": "1.0.0",
+  "description": "Fuzhounese Mahjong (福州麻将) with Single Player Bot AI & Real-time Online Multiplayer (Socket.io)",
+  "main": "server/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "keywords": ["mahjong", "fuzhou", "fuzhounese-mahjong", "multiplayer", "socket.io", "game"],
+  "author": "",
+  "license": "ISC"
+}
