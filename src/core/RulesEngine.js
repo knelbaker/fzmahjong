@@ -154,7 +154,21 @@ export class RulesEngine {
    */
   static checkHu(hand, drawnTile, jinTileTemplate, isSelfDraw) {
     // 1. Setup temporary hand for analysis
-    const tempHand = hand.clone();
+    const tempHand = (hand && typeof hand.clone === 'function')
+      ? hand.clone()
+      : {
+          privateHand: [...(hand?.privateHand || [])],
+          melds: hand?.melds ? hand.melds.map(m => ({ ...m, tiles: [...m.tiles] })) : [],
+          flowers: [...(hand?.flowers || [])],
+          clone() {
+            return {
+              privateHand: [...this.privateHand],
+              melds: this.melds.map(m => ({ ...m, tiles: [...m.tiles] })),
+              flowers: [...this.flowers],
+              clone: this.clone
+            };
+          }
+        };
     if (drawnTile) {
       tempHand.addTile(drawnTile);
     }

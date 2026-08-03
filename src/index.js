@@ -1,5 +1,6 @@
 import { GameState } from './core/GameState.js';
 import { GameController } from './engine/GameController.js';
+import { Hand } from './core/Hand.js';
 import { Renderer } from './ui/Renderer.js';
 import { SocketClient } from './net/SocketClient.js';
 import { soundManager } from './ui/SoundManager.js';
@@ -187,20 +188,22 @@ document.addEventListener('DOMContentLoaded', () => {
       winDetails: gs.winDetails,
       wall: {
         tiles: { length: gs.wallCount },
-        jinIndicator: gs.jinTile ? gs.jinTile : null,
+        jinIndicator: gs.jinIndicator || (gs.jinTile ? gs.jinTile : null),
         jinTile: gs.jinTile
       },
-      players: gs.players.map((p, idx) => ({
-        id: p.id,
-        name: p.name,
-        points: p.points,
-        discards: p.discards,
-        hand: {
-          privateHand: p.privateHand.length > 0 ? p.privateHand : new Array(p.handCount).fill({ id: `hidden_${idx}` }),
-          melds: p.melds,
-          flowers: p.flowers
-        }
-      }))
+      players: gs.players.map((p, idx) => {
+        const h = new Hand();
+        h.privateHand = p.privateHand.length > 0 ? [...p.privateHand] : new Array(p.handCount).fill(null).map((_, tileIdx) => ({ id: `hidden_${idx}_${tileIdx}` }));
+        h.melds = p.melds ? p.melds.map(m => ({ ...m, tiles: [...m.tiles] })) : [];
+        h.flowers = p.flowers ? [...p.flowers] : [];
+        return {
+          id: p.id,
+          name: p.name,
+          points: p.points,
+          discards: p.discards,
+          hand: h
+        };
+      })
     };
 
     // Re-orient seats relative to local player (local seat is always at bottom = p0)

@@ -145,6 +145,7 @@ export class RoomManager {
       winDetails: gs.winDetails,
       wallCount: gs.wall ? gs.wall.tiles.length : 0,
       jinTile: gs.wall ? gs.wall.jinTile : null,
+      jinIndicator: gs.wall ? gs.wall.jinIndicator : null,
 
       // Players array with private hands masked except for current seatIndex
       players: gs.players.map((p, idx) => {

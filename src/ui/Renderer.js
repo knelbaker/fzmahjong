@@ -68,7 +68,11 @@ export class Renderer {
     // Results modal
     this.btnNextDeal.addEventListener('click', () => {
       this.resultsModal.classList.add('hidden');
-      this.controller.startNewHand();
+      if (this.socketClient && this.socketClient.isMultiplayer) {
+        this.socketClient.startGame();
+      } else if (this.controller) {
+        this.controller.startNewHand();
+      }
     });
   }
 
@@ -142,16 +146,37 @@ export class Renderer {
 
     // 1. Update stats dashboard
     const winds = ['East', 'South', 'West', 'North'];
-    this.hudWind.textContent = winds[this.state.windRound - 1];
-    this.hudDeal.textContent = this.state.dealCount;
-    this.hudWallCount.textContent = this.state.wall ? this.state.wall.getRemainingCount() : 144;
+    let wallCount = 144;
+    if (this.state.wall) {
+      if (typeof this.state.wall.getRemainingCount === 'function') {
+        wallCount = this.state.wall.getRemainingCount();
+      } else if (typeof this.state.wall.remainingCount === 'number') {
+        wallCount = this.state.wall.remainingCount;
+      } else if (this.state.wall.tiles) {
+        wallCount = this.state.wall.tiles.length;
+      }
+    }
+    this.hudWallCount.textContent = wallCount;
     this.hudStreak.textContent = this.state.lianzhuangCount;
 
-    // Update scoreboard
+    // Update scoreboard & player names
     for (let i = 0; i < 4; i++) {
+      const player = this.state.players[i];
       const pScoreEl = document.getElementById(`score-p${i}`);
       const pPointsVal = pScoreEl.querySelector('.hud-points');
-      pPointsVal.textContent = this.state.players[i].points;
+      pPointsVal.textContent = player.points;
+
+      // Update top bar HUD name
+      const nameHudEl = document.getElementById(`name-p${i}`);
+      if (nameHudEl) {
+        nameHudEl.textContent = `${player.name}:`;
+      }
+
+      // Update table zone profile name
+      const tableNameEl = document.getElementById(`table-name-p${i}`);
+      if (tableNameEl) {
+        tableNameEl.textContent = player.name;
+      }
 
       if (i === this.state.dealerIndex) {
         pScoreEl.classList.add('active-dealer');
@@ -277,7 +302,7 @@ export class Renderer {
       // Play matching sounds based on log details
       if (logMessage.includes('discarded')) {
         soundManager.playDiscard();
-      } else if (logMessage.includes('draws') || logMessage.includes('replacing')) {
+      } else if (logMessage.includes('draws') || logMessage.includes('drew') || logMessage.includes('replacing') || logMessage.includes('turn to play')) {
         soundManager.playDraw();
       } else if (logMessage.includes('declares PUNG') || logMessage.includes('declares CHOW') || logMessage.includes('declares KONG')) {
         soundManager.playAction();
@@ -528,19 +553,17 @@ export class Renderer {
    * Triggered when an action HUD button is clicked.
    */
   handleActionClick(action) {
-    if (this.socketClient && this.socketClient.isMultiplayer) {
-      this.actionHud.classList.add('hidden');
-      this.socketClient.declareAction(action);
-      return;
-    }
-
     const p = this.state.players[0];
     const discTile = this.state.discardedTile;
-    const jinTemplate = this.state.wall.jinTile;
+    const jinTemplate = this.state.wall?.jinTile;
 
     this.actionHud.classList.add('hidden'); // Hide HUD immediately
 
     if (this.state.phase === GamePhase.PLAYING) {
+      if (this.socketClient && this.socketClient.isMultiplayer) {
+        this.socketClient.declareAction(action);
+        return;
+      }
       // 1. Actions on own turn
       if (action === 'hu') {
         const type = RulesEngine.checkHu(p.hand, null, jinTemplate, true).type;
@@ -558,6 +581,30 @@ export class Renderer {
       }
     } else if (this.state.phase === GamePhase.WAITING_FOR_ACTION) {
       // 2. Reactions on discard
+      if (action === 'chow') {
+        const chows = RulesEngine.canChow(p.hand, discTile, jinTemplate, true);
+        if (chows.length === 1) {
+          const chowMeld = [discTile, ...chows[0]];
+          if (this.socketClient && this.socketClient.isMultiplayer) {
+            this.socketClient.declareAction('chow', chowMeld);
+          } else {
+            this.controller.handleHumanReaction('chow', chowMeld);
+          }
+        } else if (chows.length > 1) {
+          this.showChowOptions(chows, discTile);
+        } else {
+          if (this.socketClient && this.socketClient.isMultiplayer) {
+            this.socketClient.declareAction('chow');
+          }
+        }
+        return;
+      }
+
+      if (this.socketClient && this.socketClient.isMultiplayer) {
+        this.socketClient.declareAction(action);
+        return;
+      }
+
       if (action === 'pass') {
         this.controller.handleHumanReaction('pass');
       } else if (action === 'hu') {
@@ -566,15 +613,6 @@ export class Renderer {
         this.controller.handleHumanReaction('pung');
       } else if (action === 'kong') {
         this.controller.handleHumanReaction('kong');
-      } else if (action === 'chow') {
-        const chows = RulesEngine.canChow(p.hand, discTile, jinTemplate, true);
-        if (chows.length === 1) {
-          // Only one combination possible, proceed immediately
-          this.controller.handleHumanReaction('chow', [discTile, ...chows[0]]);
-        } else if (chows.length > 1) {
-          // Multiple options, open selector overlay
-          this.showChowOptions(chows, discTile);
-        }
       }
     }
   }
@@ -598,7 +636,11 @@ export class Renderer {
 
       optGroup.addEventListener('click', () => {
         this.chowSelector.classList.add('hidden');
-        this.controller.handleHumanReaction('chow', tilesToDisplay);
+        if (this.socketClient && this.socketClient.isMultiplayer) {
+          this.socketClient.declareAction('chow', tilesToDisplay);
+        } else {
+          this.controller.handleHumanReaction('chow', tilesToDisplay);
+        }
       });
 
       this.chowOptionsList.appendChild(optGroup);

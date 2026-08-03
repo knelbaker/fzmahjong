@@ -2,7 +2,7 @@ import { GameState, GamePhase } from '../core/GameState.js';
 import { Wall } from '../core/Wall.js';
 import { RulesEngine } from '../core/RulesEngine.js';
 import { BotAI } from './BotAI.js';
-import { isFlower } from '../core/Tile.js';
+import { isFlower, sortTiles } from '../core/Tile.js';
 
 export class GameController {
   constructor(state, onStateChange) {
@@ -70,46 +70,26 @@ export class GameController {
    * Loops until no players have any flower tiles in their private hands.
    */
   async runFlowerReplacementLoop() {
-    let replacedAny = true;
-    let loopCount = 0;
+    for (let p = 0; p < 4; p++) {
+      const playerIndex = (this.state.dealerIndex + p) % 4;
+      const player = this.state.players[playerIndex];
+      
+      while (player.hand.privateHand.some(t => isFlower(t))) {
+        const flowerIndex = player.hand.privateHand.findIndex(t => isFlower(t));
+        const flower = player.hand.privateHand.splice(flowerIndex, 1)[0];
+        player.hand.addFlower(flower);
+        this.triggerUpdate(`${player.name} is replacing flower tile [${flower.type} ${flower.value}]...`);
+        await this.sleep(400);
 
-    while (replacedAny && loopCount < 10) { // Safety cap to avoid infinite loops
-      replacedAny = false;
-      loopCount++;
-      console.log(`--- Flower Replacement Round ${loopCount} ---`);
-
-      for (let p = 0; p < 4; p++) {
-        const playerIndex = (this.state.dealerIndex + p) % 4;
-        const player = this.state.players[playerIndex];
-        
-        // Find flower tiles in hand
-        const flowersInHand = player.hand.privateHand.filter(t => isFlower(t));
-
-        if (flowersInHand.length > 0) {
-          replacedAny = true;
-          this.triggerUpdate(`${player.name} is replacing ${flowersInHand.length} flower tile(s)...`);
-          await this.sleep(600);
-
-          console.log(`Player ${player.name} hand before replacement:`, JSON.stringify(player.hand.privateHand.map(t => `${t.type}_${t.value}_${t.id}`)));
-          console.log(`Flowers to replace:`, JSON.stringify(flowersInHand.map(t => `${t.type}_${t.value}_${t.id}`)));
-
-          for (const tile of flowersInHand) {
-            const removed = player.hand.removeTile(tile);
-            console.log(`Removing tile ${tile.id} (${tile.type} ${tile.value}):`, removed ? "SUCCESS" : "FAILED!");
-            player.hand.addFlower(tile);
-
-            // Draw replacement from the back of the wall
-            const replacement = this.state.wall.drawFromBack();
-            console.log(`Drew replacement from back:`, replacement ? JSON.stringify(replacement) : "NULL (Exhausted!)");
-            if (replacement) {
-              player.hand.addTile(replacement);
-            }
-          }
-          player.hand.sort();
-          console.log(`Player ${player.name} hand after replacement:`, JSON.stringify(player.hand.privateHand.map(t => `${t.type}_${t.value}_${t.id}`)));
-          this.triggerUpdate();
+        const replacement = this.state.wall.drawFromBack();
+        if (replacement) {
+          player.hand.addTile(replacement);
+        } else {
+          break;
         }
       }
+      player.hand.sort();
+      this.triggerUpdate();
     }
 
     this.state.phase = GamePhase.OPEN_JIN;
@@ -417,13 +397,22 @@ export class GameController {
     } else if (best.action === 'chow') {
       this.triggerUpdate(`${player.name} declares CHOW (吃) on [${this.state.discardedTile.type} ${this.state.discardedTile.value}]!`);
       
-      // Payload contains the 3 tiles forming the Chow (first is the discarded, other 2 are from hand)
-      const handTiles = best.tiles.slice(1);
+      let meldTiles = best.tiles;
+      if (!meldTiles || !Array.isArray(meldTiles) || meldTiles.length !== 3) {
+        const chows = RulesEngine.canChow(player.hand, this.state.discardedTile, this.state.wall?.jinTile, true);
+        if (chows.length > 0) {
+          meldTiles = [this.state.discardedTile, ...chows[0]];
+        } else {
+          meldTiles = [this.state.discardedTile];
+        }
+      }
+
+      const handTiles = meldTiles.slice(1);
       for (const ht of handTiles) {
         player.hand.removeTile(ht);
       }
 
-      player.hand.addMeld('chow', best.tiles, this.state.discarderIndex);
+      player.hand.addMeld('chow', sortTiles(meldTiles), this.state.discarderIndex);
       player.hand.sort();
       this.state.currentPlayerIndex = best.playerIndex;
       this.state.phase = GamePhase.PLAYING;
