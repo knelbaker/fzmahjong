@@ -3,12 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fuzhounese Mahjong (福州麻将)</title>
+  <title>Fuzhounese Mahjong (福州麻将) - Online Multiplayer & Single Player</title>
   <link rel="stylesheet" href="./css/style.css">
   <!-- Google Fonts: Outfit and Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Socket.io Client -->
+  <script src="/socket.io/socket.io.js" onerror="this.onerror=null;this.src='https://cdn.socket.io/4.7.5/socket.io.min.js';"></script>
+
   <script>
     const failedUrls = new Set();
     function showError(message, file, line) {
@@ -41,7 +45,7 @@
         return;
       }
       showError(e.message, e.filename, e.lineno);
-    }, true); // Capture phase listener captures resource loading errors
+    }, true);
 
     window.addEventListener('unhandledrejection', function(e) {
       const reason = e.reason;
@@ -57,7 +61,7 @@
     <div class="splash-card">
       <div class="mahjong-badge">福州麻将</div>
       <h1>Fuzhou Mahjong</h1>
-      <p class="subtitle">Play the traditional Fuzhounese version against smart bots.</p>
+      <p class="subtitle">Play traditional Fuzhounese Mahjong solo or online with friends.</p>
       
       <div class="rule-features">
         <div class="feature-item">
@@ -68,22 +72,104 @@
           </div>
         </div>
         <div class="feature-item">
-          <span class="icon">🌸</span>
+          <span class="icon">🌐</span>
           <div>
-            <strong>36 Flower Tiles</strong>
-            <p>Winds, Dragons, Seasons, and Plants are flowers and replaced from the wall.</p>
+            <strong>Online Multiplayer</strong>
+            <p>Create room codes, invite friends, and auto-fill empty seats with bots.</p>
           </div>
         </div>
         <div class="feature-item">
           <span class="icon">👑</span>
           <div>
             <strong>Fuzhou Scoring (水)</strong>
-            <p>Score multipliers for San Jin Dao (三金倒), Jin Que (金雀), Jin Long (金龙), and No Jin (无金).</p>
+            <p>Multipliers for San Jin Dao (三金倒), Jin Que (金雀), Jin Long (金龙), and No Jin (无金).</p>
           </div>
         </div>
       </div>
       
-      <button id="start-game-btn" class="btn primary large-btn">Start Game</button>
+      <div class="mode-buttons">
+        <button id="btn-mode-single" class="btn primary large-btn">🎮 Single Player (vs Bots)</button>
+        <button id="btn-mode-multi" class="btn secondary large-btn">🌐 Online Multiplayer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Online Multiplayer Lobby Modal -->
+  <div id="multiplayer-overlay" class="overlay hidden">
+    <div class="splash-card mp-card">
+      <div class="mahjong-badge">Online Lobby</div>
+      <h2>Play Against Friends</h2>
+      
+      <div id="mp-initial-form">
+        <div class="input-group">
+          <label for="mp-player-name">Your Display Name</label>
+          <input type="text" id="mp-player-name" class="styled-input" placeholder="e.g. Alex" maxlength="12" value="Player">
+        </div>
+
+        <div class="mp-tabs">
+          <button id="tab-create-room" class="tab-btn active">Create Room</button>
+          <button id="tab-join-room" class="tab-btn">Join Room</button>
+        </div>
+
+        <div id="view-create-room" class="tab-content">
+          <p>Start a new room and get a 4-letter code to share with your friends.</p>
+          <button id="btn-create-room-submit" class="btn primary full-btn">Create New Room</button>
+        </div>
+
+        <div id="view-join-room" class="tab-content hidden">
+          <div class="input-group">
+            <label for="mp-room-code-input">Enter 4-Letter Room Code</label>
+            <input type="text" id="mp-room-code-input" class="styled-input uppercase-input" placeholder="e.g. MJ92" maxlength="4">
+          </div>
+          <button id="btn-join-room-submit" class="btn primary full-btn">Join Room</button>
+        </div>
+      </div>
+
+      <!-- Active Lobby Room View (Once room is created/joined) -->
+      <div id="mp-room-view" class="hidden">
+        <div class="room-code-banner">
+          <span>ROOM CODE:</span>
+          <strong id="display-room-code" class="code-highlight">MJ92</strong>
+          <button id="btn-copy-code" class="btn small-btn secondary">📋 Copy</button>
+        </div>
+
+        <div class="lobby-seats-grid">
+          <div class="lobby-seat" id="seat-card-0">
+            <span class="seat-badge">Seat 1 (Dealer)</span>
+            <span class="seat-name" id="seat-name-0">Waiting...</span>
+            <span class="seat-status" id="seat-status-0">-</span>
+          </div>
+          <div class="lobby-seat" id="seat-card-1">
+            <span class="seat-badge">Seat 2</span>
+            <span class="seat-name" id="seat-name-1">Waiting...</span>
+            <span class="seat-status" id="seat-status-1">-</span>
+          </div>
+          <div class="lobby-seat" id="seat-card-2">
+            <span class="seat-badge">Seat 3</span>
+            <span class="seat-name" id="seat-name-2">Waiting...</span>
+            <span class="seat-status" id="seat-status-2">-</span>
+          </div>
+          <div class="lobby-seat" id="seat-card-3">
+            <span class="seat-badge">Seat 4</span>
+            <span class="seat-name" id="seat-name-3">Waiting...</span>
+            <span class="seat-status" id="seat-status-3">-</span>
+          </div>
+        </div>
+
+        <div class="bot-toggle-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="chk-fill-bots" checked>
+            <span>Fill empty seats with Fuzhou Bots</span>
+          </label>
+        </div>
+
+        <div class="mp-room-actions">
+          <button id="btn-mp-start-game" class="btn primary large-btn">Start Game</button>
+          <button id="btn-mp-leave-room" class="btn secondary">Leave Room</button>
+        </div>
+      </div>
+
+      <button id="btn-close-mp-modal" class="close-text-btn">← Back to Menu</button>
     </div>
   </div>
 
@@ -94,7 +180,7 @@
     <header class="game-header">
       <div class="brand">
         <span class="logo-text">福州麻将</span>
-        <span class="badge">V1.0</span>
+        <span id="room-code-tag" class="badge hidden">ROOM: MJ92</span>
       </div>
 
       <div class="dashboard-stats">
@@ -118,20 +204,20 @@
 
       <div class="hud-scores">
         <div id="score-p0" class="player-score-hud active-dealer">
-          <span class="hud-name">Player:</span>
-          <span class="hud-points">100</span>
+          <span class="hud-name" id="name-p0">You:</span>
+          <span class="hud-points" id="pts-p0">100</span>
         </div>
         <div id="score-p1" class="player-score-hud">
-          <span class="hud-name">Bot 1:</span>
-          <span class="hud-points">100</span>
+          <span class="hud-name" id="name-p1">Bot 1:</span>
+          <span class="hud-points" id="pts-p1">100</span>
         </div>
         <div id="score-p2" class="player-score-hud">
-          <span class="hud-name">Bot 2:</span>
-          <span class="hud-points">100</span>
+          <span class="hud-name" id="name-p2">Bot 2:</span>
+          <span class="hud-points" id="pts-p2">100</span>
         </div>
         <div id="score-p3" class="player-score-hud">
-          <span class="hud-name">Bot 3:</span>
-          <span class="hud-points">100</span>
+          <span class="hud-name" id="name-p3">Bot 3:</span>
+          <span class="hud-points" id="pts-p3">100</span>
         </div>
       </div>
     </header>
@@ -144,7 +230,7 @@
         <div class="player-zone top-zone" id="zone-p2">
           <div class="opponent-profile">
             <span class="dealer-icon hidden">庄</span>
-            <span class="name">Bot 2</span>
+            <span class="name" id="table-name-p2">Bot 2</span>
           </div>
           <div class="opponent-hand-container">
             <div class="flowers-row" id="flowers-p2"></div>
@@ -157,7 +243,7 @@
         <div class="player-zone left-zone" id="zone-p1">
           <div class="opponent-profile">
             <span class="dealer-icon hidden">庄</span>
-            <span class="name">Bot 1</span>
+            <span class="name" id="table-name-p1">Bot 1</span>
           </div>
           <div class="opponent-hand-container vertical-hand">
             <div class="flowers-row" id="flowers-p1"></div>
@@ -170,7 +256,7 @@
         <div class="player-zone right-zone" id="zone-p3">
           <div class="opponent-profile">
             <span class="dealer-icon hidden">庄</span>
-            <span class="name">Bot 3</span>
+            <span class="name" id="table-name-p3">Bot 3</span>
           </div>
           <div class="opponent-hand-container vertical-hand">
             <div class="flowers-row" id="flowers-p3"></div>
@@ -211,12 +297,12 @@
           </div>
         </div>
 
-        <!-- Human Player Bottom (Player 0) -->
+        <!-- Human Player Bottom (Player 0 / Self) -->
         <div class="player-zone bottom-zone active-turn" id="zone-p0">
           <div class="player-info-hud">
             <div class="opponent-profile inline-profile">
               <span class="dealer-icon hidden">庄</span>
-              <span class="name">You</span>
+              <span class="name" id="table-name-p0">You</span>
             </div>
             <div class="flowers-row" id="flowers-p0"></div>
             <div class="melds-row" id="melds-p0"></div>
@@ -241,7 +327,7 @@
       <button id="btn-hu" class="btn accent action-btn hidden">HU (胡!)</button>
     </div>
 
-    <!-- Chow Options Selector Menu (Modal dropdown for multiple sequences) -->
+    <!-- Chow Options Selector Menu -->
     <div id="chow-selector" class="chow-selector-overlay hidden">
       <div class="chow-selector-card">
         <h3>Select Chow Combination</h3>
@@ -254,7 +340,7 @@
     <footer class="game-footer">
       <div class="console-box">
         <span class="console-icon">💬</span>
-        <div id="console-logs" class="console-text">Welcome to Fuzhounese Mahjong! Click Start to begin.</div>
+        <div id="console-logs" class="console-text">Welcome to Fuzhounese Mahjong! Select a game mode to begin.</div>
       </div>
     </footer>
 
