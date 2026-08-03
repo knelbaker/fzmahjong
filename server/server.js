@@ -126,6 +126,24 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Change Bot Difficulty
+  socket.on('change_bot_difficulty', ({ roomCode, seatIndex, difficulty }) => {
+    const room = roomManager.rooms.get(roomCode);
+    if (!room) return;
+
+    if (room.hostSocketId !== socket.id) {
+      socket.emit('error_message', 'Only the room host can change bot difficulty.');
+      return;
+    }
+
+    if (seatIndex < 0 || seatIndex >= 4) return;
+    const seat = room.seats[seatIndex];
+    if (seat && seat.isBot) {
+      seat.difficulty = difficulty;
+      broadcastLobbyState(room, `Changed ${seat.name} difficulty to ${difficulty}.`);
+    }
+  });
+
   // 5. Start Game
   socket.on('start_game', async ({ roomCode }) => {
     const room = roomManager.rooms.get(roomCode);

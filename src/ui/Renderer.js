@@ -537,13 +537,15 @@ export class Renderer {
       // Update top bar HUD name
       const nameHudEl = document.getElementById(`name-p${i}`);
       if (nameHudEl) {
-        nameHudEl.textContent = `${player.name}:`;
+        const diffText = player.isBot ? ` (${player.difficulty ? player.difficulty.charAt(0).toUpperCase() + player.difficulty.slice(1) : 'Medium'})` : '';
+        nameHudEl.textContent = `${player.name}${diffText}:`;
       }
 
       // Update table zone profile name
       const tableNameEl = document.getElementById(`table-name-p${i}`);
       if (tableNameEl) {
-        tableNameEl.textContent = player.name;
+        const diffText = player.isBot ? ` (${player.difficulty ? player.difficulty.charAt(0).toUpperCase() + player.difficulty.slice(1) : 'Medium'})` : '';
+        tableNameEl.textContent = `${player.name}${diffText}`;
       }
 
       if (i === this.state.dealerIndex) {
@@ -1059,7 +1061,8 @@ export class Renderer {
         header.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
       }
 
-      winnerName.textContent = `${winner.name} wins!`;
+      const diffText = winner.isBot ? ` (${winner.difficulty ? winner.difficulty.charAt(0).toUpperCase() + winner.difficulty.slice(1) : 'Medium'})` : '';
+      winnerName.textContent = `${winner.name}${diffText} wins!`;
       winDesc.textContent = `${details.isSelfDraw ? 'Self-drawn win (自摸)' : 'Win by discard (放炮胡)'} via ${this.getWinTypeLabel(details.winType)}`;
 
       // Fill values

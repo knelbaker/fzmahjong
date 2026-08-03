@@ -106,6 +106,12 @@ export class SocketClient {
     }
   }
 
+  changeBotDifficulty(seatIndex, difficulty) {
+    if (this.roomCode) {
+      this.socket.emit('change_bot_difficulty', { roomCode: this.roomCode, seatIndex, difficulty });
+    }
+  }
+
   startGame() {
     if (this.roomCode) {
       this.socket.emit('start_game', { roomCode: this.roomCode });

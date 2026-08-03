@@ -10,10 +10,11 @@ export const GamePhase = {
 };
 
 export class Player {
-  constructor(id, name, isBot = false) {
+  constructor(id, name, isBot = false, difficulty = 'medium') {
     this.id = id;
     this.name = name;
     this.isBot = isBot;
+    this.difficulty = difficulty;
     this.hand = new Hand();
     this.discards = []; // Discard pile (河)
     this.points = 100;  // Initial points (e.g. 100 points)

@@ -17,7 +17,7 @@ export class MultiplayerGame {
     gs.resetForNewDeal();
 
     // Setup players matching room seats
-    gs.players = room.seats.map(seat => new Player(seat.seatIndex, seat.name, seat.isBot));
+    gs.players = room.seats.map(seat => new Player(seat.seatIndex, seat.name, seat.isBot, seat.difficulty || 'medium'));
 
     gs.wall = new Wall();
     gs.wall.shuffle();
@@ -149,7 +149,7 @@ export class MultiplayerGame {
 
         if (room.seats[i].isBot) {
           // Bot evaluates reaction decision immediately
-          const botChoice = BotAI.decideAction(other, tile, gs.discarderIndex, gs.wall.jinTile, isNextPlayer);
+          const botChoice = BotAI.decideAction(other, tile, gs.discarderIndex, gs.wall.jinTile, isNextPlayer, gs);
           room.pendingActions[i] = { type: botChoice.action, chowMeld: botChoice.tiles };
         }
       } else {
@@ -337,7 +337,7 @@ export class MultiplayerGame {
       setTimeout(() => {
         if (gs.phase === GamePhase.PLAYING && gs.currentPlayerIndex === seatIdx) {
           const player = gs.players[seatIdx];
-          const botTile = BotAI.decideDiscard(player.hand, gs.wall.jinTile);
+          const botTile = BotAI.decideDiscard(player, gs.wall.jinTile, gs);
           if (botTile) {
             MultiplayerGame.handleDiscard(room, seatIdx, botTile.id, broadcastUpdate);
           }

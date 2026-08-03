@@ -39,9 +39,9 @@ export class RoomManager {
       fillBots: true,
       seats: [
         { seatIndex: 0, socketId, token: hostToken, name: playerName, isBot: false, connected: true },
-        { seatIndex: 1, socketId: null, token: generateToken(), name: 'Bot 1', isBot: true, connected: true },
-        { seatIndex: 2, socketId: null, token: generateToken(), name: 'Bot 2', isBot: true, connected: true },
-        { seatIndex: 3, socketId: null, token: generateToken(), name: 'Bot 3', isBot: true, connected: true }
+        { seatIndex: 1, socketId: null, token: generateToken(), name: 'Bot 1', isBot: true, connected: true, difficulty: 'medium' },
+        { seatIndex: 2, socketId: null, token: generateToken(), name: 'Bot 2', isBot: true, connected: true, difficulty: 'medium' },
+        { seatIndex: 3, socketId: null, token: generateToken(), name: 'Bot 3', isBot: true, connected: true, difficulty: 'medium' }
       ],
       gameState: null,
       pendingActions: {}, // seatIndex -> action chosen
@@ -103,6 +103,11 @@ export class RoomManager {
       if (!room.seats[i].socketId) {
         room.seats[i].isBot = fillBots;
         room.seats[i].name = fillBots ? botNames[i] : 'Empty Seat';
+        if (fillBots) {
+          room.seats[i].difficulty = room.seats[i].difficulty || 'medium';
+        } else {
+          delete room.seats[i].difficulty;
+        }
       }
     }
   }

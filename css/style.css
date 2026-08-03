@@ -362,6 +362,49 @@ body {
   transform: translateY(0);
 }
 
+/* Difficulty Buttons styling on single player screen */
+.btn-difficulty-easy {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.03) 100%);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.btn-difficulty-easy:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.16) 0%, rgba(37, 99, 235, 0.08) 100%);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.4);
+}
+.btn-difficulty-easy:hover .btn-landing-title {
+  color: #3b82f6;
+}
+
+.btn-difficulty-medium {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.03) 100%);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.btn-difficulty-medium:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border-color: rgba(245, 158, 11, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(245, 158, 11, 0.4);
+}
+.btn-difficulty-medium:hover .btn-landing-title {
+  color: #f59e0b;
+}
+
+.btn-difficulty-hard {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.03) 100%);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.btn-difficulty-hard:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(220, 38, 38, 0.08) 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(239, 68, 68, 0.4);
+}
+.btn-difficulty-hard:hover .btn-landing-title {
+  color: #ef4444;
+}
+
 /* ==========================================================================
    Main Game UI Structure
    ========================================================================== */
@@ -833,14 +876,14 @@ body {
 .left-pile {
   left: 10px;
   top: 120px;
-  flex-direction: column;
+  flex-direction: row;
   transform: rotate(90deg);
 }
 
 .right-pile {
   right: 10px;
   top: 120px;
-  flex-direction: column;
+  flex-direction: row;
   transform: rotate(-90deg);
 }
 
@@ -1682,6 +1725,11 @@ body {
   transition: border-color 0.2s, background 0.2s;
 }
 
+select.styled-input option {
+  background-color: #141c2d;
+  color: #fff;
+}
+
 .styled-input:focus {
   border-color: var(--btn-primary);
   background: rgba(255, 255, 255, 0.09);
@@ -2202,5 +2250,119 @@ body {
 .chat-list-container::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ==========================================================================
+   Rules Modal Styling
+   ========================================================================== */
+
+.rules-card {
+  background: var(--card-bg-glass);
+  border: 1px solid var(--card-border-glass);
+  box-shadow: var(--card-shadow);
+  border-radius: 24px;
+  padding: 36px;
+  max-width: 680px;
+  width: 90%;
+  text-align: center;
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.rules-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.rules-tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  outline: none;
+}
+
+.rules-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rules-tab-btn.active {
+  color: var(--gold-primary);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.2);
+}
+
+.rules-content-container {
+  flex: 1;
+  overflow-y: auto;
+  text-align: left;
+  padding-right: 12px;
+  margin-bottom: 24px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.rules-content-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rules-content-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rules-content-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.rules-content-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rules-tab-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--gold-primary);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.rules-tab-content h3:first-of-type {
+  margin-top: 4px;
+}
+
+.rules-tab-content p {
+  color: #d1d5db;
+  margin-bottom: 12px;
+}
+
+.rules-tab-content ul {
+  margin-left: 20px;
+  margin-bottom: 12px;
+  color: #d1d5db;
+}
+
+.rules-tab-content li {
+  margin-bottom: 6px;
+}
+
+.rules-tab-content strong {
+  color: #fff;
+}
+
 
 

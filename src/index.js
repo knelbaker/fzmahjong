@@ -55,9 +55,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- 1. Mode Selection Handlers ---
   btnModeSingle.addEventListener('click', () => {
     soundManager.playAction();
-    startOverlay.classList.add('hidden');
-    gameContainer.classList.remove('hidden');
-    controller.startNewHand();
+    document.getElementById('landing-menu-view').classList.add('hidden');
+    document.getElementById('sp-difficulty-view').classList.remove('hidden');
+  });
+
+  const btnSpDiffBack = document.getElementById('btn-sp-diff-back');
+  if (btnSpDiffBack) {
+    btnSpDiffBack.addEventListener('click', () => {
+      soundManager.playAction();
+      document.getElementById('sp-difficulty-view').classList.add('hidden');
+      document.getElementById('landing-menu-view').classList.remove('hidden');
+    });
+  }
+
+  const spDiffBtns = document.querySelectorAll('.sp-diff-btn');
+  spDiffBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      soundManager.playAction();
+      const diff = btn.getAttribute('data-diff');
+      for (let i = 1; i < 4; i++) {
+        state.players[i].difficulty = diff;
+      }
+      // Hide overlays and transition to game board
+      document.getElementById('sp-difficulty-view').classList.add('hidden');
+      document.getElementById('landing-menu-view').classList.remove('hidden'); // Reset for next time
+      startOverlay.classList.add('hidden');
+      gameContainer.classList.remove('hidden');
+      controller.startNewHand();
+    });
   });
 
   btnModeMulti.addEventListener('click', () => {
@@ -71,6 +96,61 @@ document.addEventListener('DOMContentLoaded', () => {
     mpOverlay.classList.add('hidden');
     startOverlay.classList.remove('hidden');
   });
+
+  // --- Rules Page Handlers ---
+  const rulesOverlay = document.getElementById('rules-overlay');
+  const btnLandingRules = document.getElementById('btn-landing-rules');
+  const btnOpenRules = document.getElementById('btn-open-rules');
+  const btnCloseRules = document.getElementById('btn-close-rules');
+  const rulesTabBtns = document.querySelectorAll('.rules-tab-btn');
+  const rulesTabContents = document.querySelectorAll('.rules-tab-content');
+
+  const openRules = () => {
+    soundManager.playAction();
+    rulesOverlay.classList.remove('hidden');
+  };
+
+  const closeRules = () => {
+    soundManager.playAction();
+    rulesOverlay.classList.add('hidden');
+  };
+
+  if (btnLandingRules) {
+    btnLandingRules.addEventListener('click', openRules);
+  }
+  if (btnOpenRules) {
+    btnOpenRules.addEventListener('click', openRules);
+  }
+  if (btnCloseRules) {
+    btnCloseRules.addEventListener('click', closeRules);
+  }
+
+  if (rulesOverlay) {
+    rulesOverlay.addEventListener('click', (e) => {
+      if (e.target === rulesOverlay) {
+        closeRules();
+      }
+    });
+  }
+
+  rulesTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      soundManager.playAction();
+      const targetTabId = btn.getAttribute('data-tab');
+      
+      rulesTabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      rulesTabContents.forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+    });
+  });
+
 
   // --- 2. Tab Navigation ---
   tabCreateRoom.addEventListener('click', () => {
@@ -123,6 +203,17 @@ document.addEventListener('DOMContentLoaded', () => {
     socketClient.leaveRoom();
   });
 
+  // --- Bot Difficulty Change Listeners ---
+  for (let i = 1; i < 4; i++) {
+    const botDiffSelect = document.getElementById(`bot-diff-select-${i}`);
+    if (botDiffSelect) {
+      botDiffSelect.addEventListener('change', () => {
+        const difficulty = botDiffSelect.value;
+        socketClient.changeBotDifficulty(i, difficulty);
+      });
+    }
+  }
+
   // --- 4. Socket Client Callbacks ---
   socketClient.onLobbyState = (data) => {
     mpInitialForm.classList.add('hidden');
@@ -149,8 +240,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Host button state
+    // Show/hide and update bot difficulty selectors in lobby
     const isHost = socketClient.socket && socketClient.socket.id === data.hostSocketId;
+    for (let i = 1; i < 4; i++) {
+      const seat = data.seats[i];
+      const botDiffContainer = document.getElementById(`bot-diff-container-${i}`);
+      const botDiffSelect = document.getElementById(`bot-diff-select-${i}`);
+
+      if (seat && seat.isBot) {
+        if (botDiffContainer) botDiffContainer.classList.remove('hidden');
+        if (botDiffSelect) {
+          botDiffSelect.value = seat.difficulty || 'medium';
+          if (isHost) {
+            botDiffSelect.removeAttribute('disabled');
+          } else {
+            botDiffSelect.setAttribute('disabled', 'true');
+          }
+        }
+      } else {
+        if (botDiffContainer) botDiffContainer.classList.add('hidden');
+      }
+    }
+
+    // Host button state
     if (isHost) {
       btnMpStartGame.removeAttribute('disabled');
       btnMpStartGame.textContent = 'Start Game';
@@ -200,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: p.id,
           name: p.name,
           isBot: p.isBot,
+          difficulty: p.difficulty || 'medium',
           points: p.points,
           discards: p.discards,
           hand: h
