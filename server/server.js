@@ -162,6 +162,20 @@ io.on('connection', (socket) => {
     await MultiplayerGame.handlePlayerAction(room, seat.seatIndex, { type: actionType, chowMeld }, (r, msg) => broadcastRoomState(r, msg));
   });
 
+  // Chat Message
+  socket.on('send_chat_message', ({ roomCode, message }) => {
+    const room = roomManager.rooms.get(roomCode);
+    if (!room) return;
+    const seat = room.seats.find(s => s.socketId === socket.id);
+    if (!seat) return;
+    io.to(room.code).emit('chat_message', {
+      senderName: seat.name,
+      senderSeatIndex: seat.seatIndex,
+      message: message,
+      timestamp: Date.now()
+    });
+  });
+
   // 8. Disconnect
   socket.on('disconnect', () => {
     console.log(`[Socket] Client disconnected: ${socket.id}`);

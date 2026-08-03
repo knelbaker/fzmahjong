@@ -159,7 +159,7 @@
         <div class="bot-toggle-row">
           <label class="checkbox-label">
             <input type="checkbox" id="chk-fill-bots" checked>
-            <span>Fill empty seats with Fuzhou Bots</span>
+            <span>Fill empty seats with Bots</span>
           </label>
         </div>
 
@@ -222,9 +222,12 @@
       </div>
     </header>
 
-    <!-- Main Mahjong Table View -->
-    <main class="table-area">
-      <div class="mahjong-table">
+    <!-- Game Body Wrapper (Flex container for Table and Sidebar) -->
+    <div class="game-body-wrapper">
+      
+      <!-- Main Mahjong Table View -->
+      <main class="table-area">
+        <div class="mahjong-table">
         
         <!-- Opponent Top (Player 2) -->
         <div class="player-zone top-zone" id="zone-p2">
@@ -317,6 +320,59 @@
 
       </div>
     </main>
+
+    <!-- Chat & Gameplay Log Sidebar -->
+    <aside id="chat-sidebar" class="chat-sidebar collapsed">
+      <!-- Toggle button standing out on the right -->
+      <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" title="Toggle Chat & Logs">
+        <span class="toggle-icon">▶</span>
+        <span id="sidebar-badge" class="sidebar-badge hidden">0</span>
+      </button>
+      
+      <div class="sidebar-content-wrapper">
+        <div class="sidebar-inner">
+          <!-- Sidebar Tabs -->
+          <div class="sidebar-tabs">
+            <button id="tab-btn-logs" class="tab-btn active" data-tab="logs">Game Log</button>
+            <button id="tab-btn-chat" class="tab-btn" data-tab="chat">Chat</button>
+          </div>
+          
+          <!-- Logs Panel -->
+          <div id="tab-content-logs" class="tab-content">
+            <div id="log-list" class="log-list-container">
+              <!-- Logs dynamically appended here -->
+            </div>
+          </div>
+          
+          <!-- Chat Panel -->
+          <div id="tab-content-chat" class="tab-content hidden">
+            <div id="chat-list" class="chat-list-container">
+              <!-- Chat messages dynamically appended here -->
+            </div>
+            
+            <!-- Quick Reaction Panel -->
+            <div class="quick-reactions">
+              <button class="quick-react-btn" data-msg="🀄">🀄</button>
+              <button class="quick-react-btn" data-msg="碰!">碰!</button>
+              <button class="quick-react-btn" data-msg="吃!">吃!</button>
+              <button class="quick-react-btn" data-msg="杠!">杠!</button>
+              <button class="quick-react-btn" data-msg="胡!">胡!</button>
+              <button class="quick-react-btn" data-msg="👍">👍</button>
+              <button class="quick-react-btn" data-msg="😲">😲</button>
+              <button class="quick-react-btn" data-msg="😂">😂</button>
+            </div>
+
+            <!-- Text Input -->
+            <div class="chat-input-row">
+              <input type="text" id="chat-input" placeholder="Type a message..." maxlength="100">
+              <button id="btn-send-chat" class="btn primary">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
 
     <!-- Bottom Action Control Panel (Floating overlay) -->
     <div id="action-hud" class="action-hud-container hidden">

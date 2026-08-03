@@ -199,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
           id: p.id,
           name: p.name,
+          isBot: p.isBot,
           points: p.points,
           discards: p.discards,
           hand: h
@@ -223,5 +224,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderer.state = adaptedState;
     renderer.render(data.message);
+  };
+
+  socketClient.onChatMessage = (data) => {
+    if (renderer) {
+      const localSeatIndex = (data.senderSeatIndex - socketClient.seatIndex + 4) % 4;
+      const isSelf = localSeatIndex === 0;
+      const isBot = (renderer.state?.players[localSeatIndex]?.isBot) || ['Chen', 'Lin', 'Wong'].some(name => data.senderName.includes(name)) || data.senderName.includes('Bot');
+
+      renderer.addChatMessage({
+        senderName: data.senderName,
+        senderSeatIndex: localSeatIndex,
+        message: data.message,
+        isSelf: isSelf,
+        isBot: isBot,
+        timestamp: data.timestamp
+      });
+    }
   };
 });

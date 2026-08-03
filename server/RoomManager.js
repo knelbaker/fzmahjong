@@ -17,6 +17,8 @@ function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
+const botNames = { 1: 'Bot 1', 2: 'Bot 2', 3: 'Bot 3' };
+
 export class RoomManager {
   constructor() {
     this.rooms = new Map(); // roomCode -> Room
@@ -37,9 +39,9 @@ export class RoomManager {
       fillBots: true,
       seats: [
         { seatIndex: 0, socketId, token: hostToken, name: playerName, isBot: false, connected: true },
-        { seatIndex: 1, socketId: null, token: generateToken(), name: 'Fuzhou Bot 1', isBot: true, connected: true },
-        { seatIndex: 2, socketId: null, token: generateToken(), name: 'Fuzhou Bot 2', isBot: true, connected: true },
-        { seatIndex: 3, socketId: null, token: generateToken(), name: 'Fuzhou Bot 3', isBot: true, connected: true }
+        { seatIndex: 1, socketId: null, token: generateToken(), name: 'Bot 1', isBot: true, connected: true },
+        { seatIndex: 2, socketId: null, token: generateToken(), name: 'Bot 2', isBot: true, connected: true },
+        { seatIndex: 3, socketId: null, token: generateToken(), name: 'Bot 3', isBot: true, connected: true }
       ],
       gameState: null,
       pendingActions: {}, // seatIndex -> action chosen
@@ -100,7 +102,7 @@ export class RoomManager {
     for (let i = 1; i < 4; i++) {
       if (!room.seats[i].socketId) {
         room.seats[i].isBot = fillBots;
-        room.seats[i].name = fillBots ? `Fuzhou Bot ${i}` : 'Empty Seat';
+        room.seats[i].name = fillBots ? botNames[i] : 'Empty Seat';
       }
     }
   }
@@ -114,7 +116,7 @@ export class RoomManager {
         if (room.status === 'LOBBY') {
           seat.socketId = null;
           seat.isBot = true;
-          seat.name = `Fuzhou Bot ${seat.seatIndex}`;
+          seat.name = botNames[seat.seatIndex];
         }
         // If all humans disconnected and room > 1 hour old, clean up
         const anyHumans = room.seats.some(s => !s.isBot && s.connected);
