@@ -143,7 +143,7 @@ export class GameController {
       }
 
       // 2. Otherwise, bot discards
-      const tileToDiscard = BotAI.decideDiscard(activePlayer.hand, this.state.wall.jinTile);
+      const tileToDiscard = BotAI.decideDiscard(activePlayer, this.state.wall.jinTile, this.state);
       if (tileToDiscard) {
         await this.executeDiscard(this.state.currentPlayerIndex, tileToDiscard);
       }
@@ -245,7 +245,7 @@ export class GameController {
 
       if (player.isBot) {
         // Let bot decide
-        const decision = BotAI.decideAction(player, discardedTile, discarderIdx, jinTemplate, isNext);
+        const decision = BotAI.decideAction(player, discardedTile, discarderIdx, jinTemplate, isNext, this.state);
         if (decision.action !== 'pass') {
           reactions.push({
             playerIndex: i,
@@ -301,7 +301,7 @@ export class GameController {
     for (let i = 1; i < 4; i++) {
       const bot = this.state.players[i];
       const isNext = i === (discarderIdx + 1) % 4;
-      const decision = BotAI.decideAction(bot, discardedTile, discarderIdx, jinTemplate, isNext);
+      const decision = BotAI.decideAction(bot, discardedTile, discarderIdx, jinTemplate, isNext, this.state);
       
       if (decision.action !== 'pass') {
         reactions.push({

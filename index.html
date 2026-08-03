@@ -64,16 +64,44 @@
         <h1 class="landing-title">Fuzhou Mahjong</h1>
         <p class="landing-subtitle">A tactical implementation of traditional Fuzhounese rules. Play solo against adaptive AI or host a room with friends.</p>
       </div>
-      
-      <div class="mode-buttons-grid">
-        <button id="btn-mode-single" class="btn-landing btn-primary-landing">
-          <span class="btn-landing-title">Single Player</span>
-          <span class="btn-landing-desc">Play against bots offline</span>
-        </button>
-        <button id="btn-mode-multi" class="btn-landing btn-secondary-landing">
-          <span class="btn-landing-title">Online Multiplayer</span>
-          <span class="btn-landing-desc">Create or join rooms</span>
-        </button>
+
+      <!-- Landing Menu View -->
+      <div id="landing-menu-view">
+        <div class="mode-buttons-grid">
+          <button id="btn-mode-single" class="btn-landing btn-primary-landing">
+            <span class="btn-landing-title">Single Player</span>
+            <span class="btn-landing-desc">Play against bots offline</span>
+          </button>
+          <button id="btn-mode-multi" class="btn-landing btn-secondary-landing">
+            <span class="btn-landing-title">Online Multiplayer</span>
+            <span class="btn-landing-desc">Create or join rooms</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Single Player Difficulty View -->
+      <div id="sp-difficulty-view" class="hidden">
+        <div class="mahjong-badge" style="margin-bottom: 16px;">AI Difficulty</div>
+        <p class="landing-subtitle" style="margin-bottom: 24px; font-size: 0.95rem;">Choose the training level of your opponent bots:</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; width: 100%;">
+          <button class="btn-landing btn-difficulty-easy sp-diff-btn" data-diff="easy" style="padding: 18px 20px; align-items: flex-start; text-align: left;">
+            <span class="btn-landing-title">Easy Mode</span>
+            <span class="btn-landing-desc">Casual play with occasional mistakes and random discards.</span>
+          </button>
+          
+          <button class="btn-landing btn-difficulty-medium sp-diff-btn" data-diff="medium" style="padding: 18px 20px; align-items: flex-start; text-align: left;">
+            <span class="btn-landing-title">Medium Mode</span>
+            <span class="btn-landing-desc">Standard heuristics. Bots play a solid, competitive game.</span>
+          </button>
+          
+          <button class="btn-landing btn-difficulty-hard sp-diff-btn" data-diff="hard" style="padding: 18px 20px; align-items: flex-start; text-align: left;">
+            <span class="btn-landing-title">Hard Mode</span>
+            <span class="btn-landing-desc">Bots count visible cards to optimize their hands and Chows.</span>
+          </button>
+        </div>
+        
+        <button id="btn-sp-diff-back" class="close-text-btn" style="margin-top: 10px;">← Back to Menu</button>
       </div>
     </div>
   </div>
@@ -127,16 +155,37 @@
             <span class="seat-badge">Seat 2</span>
             <span class="seat-name" id="seat-name-1">Waiting...</span>
             <span class="seat-status" id="seat-status-1">-</span>
+            <div class="bot-diff-container hidden" id="bot-diff-container-1" style="margin-top: 8px; width: 100%;">
+              <select class="bot-difficulty-select styled-input" id="bot-diff-select-1" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; text-align: center; text-align-last: center; cursor: pointer;">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
           </div>
           <div class="lobby-seat" id="seat-card-2">
             <span class="seat-badge">Seat 3</span>
             <span class="seat-name" id="seat-name-2">Waiting...</span>
             <span class="seat-status" id="seat-status-2">-</span>
+            <div class="bot-diff-container hidden" id="bot-diff-container-2" style="margin-top: 8px; width: 100%;">
+              <select class="bot-difficulty-select styled-input" id="bot-diff-select-2" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; text-align: center; text-align-last: center; cursor: pointer;">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
           </div>
           <div class="lobby-seat" id="seat-card-3">
             <span class="seat-badge">Seat 4</span>
             <span class="seat-name" id="seat-name-3">Waiting...</span>
             <span class="seat-status" id="seat-status-3">-</span>
+            <div class="bot-diff-container hidden" id="bot-diff-container-3" style="margin-top: 8px; width: 100%;">
+              <select class="bot-difficulty-select styled-input" id="bot-diff-select-3" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; text-align: center; text-align-last: center; cursor: pointer;">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -220,9 +269,9 @@
             <span class="name" id="table-name-p2">Bot 2</span>
           </div>
           <div class="opponent-hand-container">
-            <div class="flowers-row" id="flowers-p2"></div>
-            <div class="melds-row" id="melds-p2"></div>
             <div class="hand-row closed-hand" id="hand-p2"></div>
+            <div class="melds-row" id="melds-p2"></div>
+            <div class="flowers-row" id="flowers-p2"></div>
           </div>
         </div>
 

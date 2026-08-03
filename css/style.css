@@ -362,6 +362,49 @@ body {
   transform: translateY(0);
 }
 
+/* Difficulty Buttons styling on single player screen */
+.btn-difficulty-easy {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.03) 100%);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.btn-difficulty-easy:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.16) 0%, rgba(37, 99, 235, 0.08) 100%);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.4);
+}
+.btn-difficulty-easy:hover .btn-landing-title {
+  color: #3b82f6;
+}
+
+.btn-difficulty-medium {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.03) 100%);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.btn-difficulty-medium:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border-color: rgba(245, 158, 11, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(245, 158, 11, 0.4);
+}
+.btn-difficulty-medium:hover .btn-landing-title {
+  color: #f59e0b;
+}
+
+.btn-difficulty-hard {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.03) 100%);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.btn-difficulty-hard:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(220, 38, 38, 0.08) 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(239, 68, 68, 0.4);
+}
+.btn-difficulty-hard:hover .btn-landing-title {
+  color: #ef4444;
+}
+
 /* ==========================================================================
    Main Game UI Structure
    ========================================================================== */
@@ -833,14 +876,14 @@ body {
 .left-pile {
   left: 10px;
   top: 120px;
-  flex-direction: column;
+  flex-direction: row;
   transform: rotate(90deg);
 }
 
 .right-pile {
   right: 10px;
   top: 120px;
-  flex-direction: column;
+  flex-direction: row;
   transform: rotate(-90deg);
 }
 
@@ -1680,6 +1723,11 @@ body {
   font-family: var(--font-body);
   outline: none;
   transition: border-color 0.2s, background 0.2s;
+}
+
+select.styled-input option {
+  background-color: #141c2d;
+  color: #fff;
 }
 
 .styled-input:focus {

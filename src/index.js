@@ -55,9 +55,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- 1. Mode Selection Handlers ---
   btnModeSingle.addEventListener('click', () => {
     soundManager.playAction();
-    startOverlay.classList.add('hidden');
-    gameContainer.classList.remove('hidden');
-    controller.startNewHand();
+    document.getElementById('landing-menu-view').classList.add('hidden');
+    document.getElementById('sp-difficulty-view').classList.remove('hidden');
+  });
+
+  const btnSpDiffBack = document.getElementById('btn-sp-diff-back');
+  if (btnSpDiffBack) {
+    btnSpDiffBack.addEventListener('click', () => {
+      soundManager.playAction();
+      document.getElementById('sp-difficulty-view').classList.add('hidden');
+      document.getElementById('landing-menu-view').classList.remove('hidden');
+    });
+  }
+
+  const spDiffBtns = document.querySelectorAll('.sp-diff-btn');
+  spDiffBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      soundManager.playAction();
+      const diff = btn.getAttribute('data-diff');
+      for (let i = 1; i < 4; i++) {
+        state.players[i].difficulty = diff;
+      }
+      // Hide overlays and transition to game board
+      document.getElementById('sp-difficulty-view').classList.add('hidden');
+      document.getElementById('landing-menu-view').classList.remove('hidden'); // Reset for next time
+      startOverlay.classList.add('hidden');
+      gameContainer.classList.remove('hidden');
+      controller.startNewHand();
+    });
   });
 
   btnModeMulti.addEventListener('click', () => {
@@ -123,6 +148,17 @@ document.addEventListener('DOMContentLoaded', () => {
     socketClient.leaveRoom();
   });
 
+  // --- Bot Difficulty Change Listeners ---
+  for (let i = 1; i < 4; i++) {
+    const botDiffSelect = document.getElementById(`bot-diff-select-${i}`);
+    if (botDiffSelect) {
+      botDiffSelect.addEventListener('change', () => {
+        const difficulty = botDiffSelect.value;
+        socketClient.changeBotDifficulty(i, difficulty);
+      });
+    }
+  }
+
   // --- 4. Socket Client Callbacks ---
   socketClient.onLobbyState = (data) => {
     mpInitialForm.classList.add('hidden');
@@ -149,8 +185,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Host button state
+    // Show/hide and update bot difficulty selectors in lobby
     const isHost = socketClient.socket && socketClient.socket.id === data.hostSocketId;
+    for (let i = 1; i < 4; i++) {
+      const seat = data.seats[i];
+      const botDiffContainer = document.getElementById(`bot-diff-container-${i}`);
+      const botDiffSelect = document.getElementById(`bot-diff-select-${i}`);
+
+      if (seat && seat.isBot) {
+        if (botDiffContainer) botDiffContainer.classList.remove('hidden');
+        if (botDiffSelect) {
+          botDiffSelect.value = seat.difficulty || 'medium';
+          if (isHost) {
+            botDiffSelect.removeAttribute('disabled');
+          } else {
+            botDiffSelect.setAttribute('disabled', 'true');
+          }
+        }
+      } else {
+        if (botDiffContainer) botDiffContainer.classList.add('hidden');
+      }
+    }
+
+    // Host button state
     if (isHost) {
       btnMpStartGame.removeAttribute('disabled');
       btnMpStartGame.textContent = 'Start Game';
@@ -200,6 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: p.id,
           name: p.name,
           isBot: p.isBot,
+          difficulty: p.difficulty || 'medium',
           points: p.points,
           discards: p.discards,
           hand: h
