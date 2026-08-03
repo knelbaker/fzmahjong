@@ -711,15 +711,13 @@ h1 {
    Mahjong Tile Styling (The core elements)
    ========================================================================== */
 
-/* The 3D Bevel effect */
+/* The 3D Bevel effect (defined by the SVG assets) */
 .tile {
-  background: var(--tile-bg);
-  border: 1px solid var(--tile-border);
-  border-bottom: 4px solid var(--tile-border);
-  box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background-color: #ffffff;
   border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  border-bottom: 3.5px solid #cbd5e1; /* Subtle physical 3D bottom bevel */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
   color: var(--text-dark);
   font-family: var(--font-display);
   font-weight: 800;
@@ -733,6 +731,13 @@ h1 {
   overflow: hidden;
 }
 
+.tile img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  display: block;
+}
+
 /* Player tile standard sizing */
 .hand-row .tile {
   width: 44px;
@@ -742,12 +747,8 @@ h1 {
 
 /* Hover effect on Player's turn */
 .active-hand .tile:hover {
-  transform: translateY(-8px) rotateX(10deg);
-  border-bottom-width: 6px;
-  box-shadow: 
-    0 12px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  background: #fff;
+  transform: translateY(-8px);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
   z-index: 10;
 }
 
@@ -755,19 +756,20 @@ h1 {
   transform: translateY(-2px);
 }
 
-/* Suit Colorations */
-.tile[data-suit="character"] { color: #dc2626; } /* Red for Wan */
-.tile[data-suit="dot"] { color: #2563eb; }       /* Blue for Tong */
-.tile[data-suit="bamboo"] { color: #16a34a; }    /* Green for Tiao */
-.tile[data-suit="dragon"] { color: #9333ea; }    /* Purple for Dragons */
-.tile[data-suit="wind"] { color: #4b5563; }      /* Dark grey for Winds */
+/* Suit Colorations (unused but kept for reference or generic states) */
+.tile[data-suit="character"] { color: #dc2626; }
+.tile[data-suit="dot"] { color: #2563eb; }
+.tile[data-suit="bamboo"] { color: #16a34a; }
+.tile[data-suit="dragon"] { color: #9333ea; }
+.tile[data-suit="wind"] { color: #4b5563; }
 
 /* Jin Wildcard Tile Glowing Effect */
 .tile.jin-wildcard {
-  border: 2px solid var(--gold-primary);
-  border-bottom-width: 5px;
-  box-shadow: 0 0 12px var(--gold-glow);
+  outline: 2.5px solid var(--gold-primary);
+  outline-offset: -1px;
+  box-shadow: 0 0 15px var(--gold-glow);
   animation: pulseJinGlow 2.5s infinite;
+  border-radius: 6px;
 }
 
 .tile.jin-wildcard::after {
@@ -783,7 +785,7 @@ h1 {
   border-radius: 3px;
   line-height: 1;
   box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  z-index: 2;
+  z-index: 5;
 }
 
 /* Hide text badge on smaller tiles to keep them legible */
@@ -795,60 +797,403 @@ h1 {
 }
 
 /* Tile Index Number and Suit Character Sizing/Positioning */
-.tile-number {
+/* ==========================================================================
+   Traditional Tile Faces Styling (Scalable using em units)
+   ========================================================================== */
+
+/* Character Tiles */
+.tile-character {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1.1;
+  font-family: "Kaiti", "STKaiti", "BiauKai", "楷体", "Microsoft YaHei", serif;
+  font-weight: bold;
+}
+.tile-char-num {
+  font-size: 0.8em;
+  color: #0f172a; /* Deep charcoal/blue-black */
+}
+.tile-char-suit {
+  font-size: 0.85em;
+  color: #dc2626; /* Vibrant traditional red */
+  margin-top: -0.05em;
+}
+
+/* Dot Tiles (Circle structures) */
+.tile-dots {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-items: center;
+  padding: 0.35em;
+}
+.dot-circle {
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  box-shadow: inset 0 0.04em 0 rgba(255,255,255,0.4), 0 0.05em 0.1em rgba(0,0,0,0.25);
+  position: relative;
+}
+.dot-red {
+  background: radial-gradient(circle at 35% 35%, #ef4444, #991b1b);
+}
+.dot-green {
+  background: radial-gradient(circle at 35% 35%, #22c55e, #14532d);
+}
+.dot-blue {
+  background: radial-gradient(circle at 35% 35%, #3b82f6, #1d4ed8);
+}
+
+/* 1 Dot ornate pattern */
+.dots-count-1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dot-large {
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ef4444, #b91c1c);
+  border: 0.08em solid #22c55e;
+  box-shadow: inset 0 0.04em 0 rgba(255,255,255,0.45), 0 0.05em 0.12em rgba(0,0,0,0.3);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dot-large-center {
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3b82f6, #1d4ed8);
+  box-shadow: inset 0 0.04em 0 rgba(255,255,255,0.4);
+}
+
+.dots-count-2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+.dots-count-2 .dot-circle {
+  width: 0.55em;
+  height: 0.55em;
+}
+
+.dots-count-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 82%;
+  height: 82%;
+}
+.dots-count-3 .dot-circle:nth-child(1) { grid-area: 1 / 1; }
+.dots-count-3 .dot-circle:nth-child(2) { grid-area: 2 / 2; }
+.dots-count-3 .dot-circle:nth-child(3) { grid-area: 3 / 3; }
+
+.dots-count-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.2em 0.3em;
+}
+.dots-count-4 .dot-circle {
+  width: 0.5em;
+  height: 0.5em;
+}
+
+.dots-count-5 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 85%;
+  height: 85%;
+}
+.dots-count-5 .dot-circle:nth-child(1) { grid-area: 1 / 1; }
+.dots-count-5 .dot-circle:nth-child(2) { grid-area: 1 / 3; }
+.dots-count-5 .dot-circle:nth-child(3) { grid-area: 2 / 2; }
+.dots-count-5 .dot-circle:nth-child(4) { grid-area: 3 / 1; }
+.dots-count-5 .dot-circle:nth-child(5) { grid-area: 3 / 3; }
+
+.dots-count-6 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.18em 0.28em;
+}
+
+.dots-count-7 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  width: 82%;
+  height: 88%;
+}
+.dots-count-7 .dot-circle:nth-child(1) { grid-area: 1 / 1; }
+.dots-count-7 .dot-circle:nth-child(2) { grid-area: 2 / 2; }
+.dots-count-7 .dot-circle:nth-child(3) { grid-area: 3 / 3; }
+.dots-count-7 .dot-circle:nth-child(4) { grid-area: 4 / 1; }
+.dots-count-7 .dot-circle:nth-child(5) { grid-area: 4 / 3; }
+.dots-count-7 .dot-circle:nth-child(6) { grid-area: 5 / 1; }
+.dots-count-7 .dot-circle:nth-child(7) { grid-area: 5 / 3; }
+
+.dots-count-8 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 0.12em 0.35em;
+}
+.dots-count-8 .dot-circle {
+  width: 0.46em;
+  height: 0.46em;
+}
+
+.dots-count-9 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.12em;
+  width: 85%;
+  height: 85%;
+}
+.dots-count-9 .dot-circle {
+  width: 0.44em;
+  height: 0.44em;
+}
+
+/* Bamboo Tiles (Stick structures) */
+.tile-bamboos {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-items: center;
+  padding: 0.35em;
+}
+.bamboo-stick {
+  width: 0.15em;
+  height: 0.55em;
+  border-radius: 0.05em;
+  position: relative;
+  box-shadow: inset 0 0.04em 0 rgba(255,255,255,0.4), 0 0.05em 0.08em rgba(0,0,0,0.2);
+}
+.bamboo-stick::after {
+  content: '';
   position: absolute;
-  top: 3px;
-  left: 5px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 0.05em;
+  background-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-50%);
+}
+.bamboo-green { background: linear-gradient(to right, #22c55e, #14532d); }
+.bamboo-red { background: linear-gradient(to right, #ef4444, #991b1b); }
+.bamboo-blue { background: linear-gradient(to right, #3b82f6, #1d4ed8); }
+
+.tile-bamboo-1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.bamboo-bird-svg {
+  width: 85%;
+  height: 85%;
+  filter: drop-shadow(0 0.05em 0.05em rgba(0,0,0,0.15));
+}
+
+.bamboo-count-2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+.bamboo-count-2 .bamboo-stick {
+  height: 0.6em;
+}
+
+.bamboo-count-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  align-items: center;
+  justify-content: center;
+}
+.bamboo-count-3 .row-top {
+  display: flex;
+  justify-content: center;
+}
+.bamboo-count-3 .row-bottom {
+  display: flex;
+  gap: 0.3em;
+}
+
+.bamboo-count-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.2em 0.5em;
+}
+
+.bamboo-count-5 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 85%;
+  height: 85%;
+  gap: 0.08em;
+}
+.bamboo-count-5 .bamboo-stick:nth-child(1) { grid-area: 1 / 1; }
+.bamboo-count-5 .bamboo-stick:nth-child(2) { grid-area: 1 / 3; }
+.bamboo-count-5 .bamboo-stick:nth-child(3) { grid-area: 2 / 2; }
+.bamboo-count-5 .bamboo-stick:nth-child(4) { grid-area: 3 / 1; }
+.bamboo-count-5 .bamboo-stick:nth-child(5) { grid-area: 3 / 3; }
+
+.bamboo-count-6 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.22em 0.22em;
+}
+
+.bamboo-count-7 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 90%;
+  height: 90%;
+  gap: 0.1em;
+}
+.bamboo-count-7 .bamboo-stick:nth-child(1) { grid-area: 1 / 2; }
+.bamboo-count-7 .bamboo-stick:nth-child(2) { grid-area: 2 / 1; }
+.bamboo-count-7 .bamboo-stick:nth-child(3) { grid-area: 2 / 2; }
+.bamboo-count-7 .bamboo-stick:nth-child(4) { grid-area: 2 / 3; }
+.bamboo-count-7 .bamboo-stick:nth-child(5) { grid-area: 3 / 1; }
+.bamboo-count-7 .bamboo-stick:nth-child(6) { grid-area: 3 / 2; }
+.bamboo-count-7 .bamboo-stick:nth-child(7) { grid-area: 3 / 3; }
+
+.bamboo-count-8 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.22em 0.15em;
+}
+
+.bamboo-count-9 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.1em 0.22em;
+  width: 85%;
+  height: 85%;
+}
+
+/* Wind Tiles */
+.tile-wind {
+  font-family: "Kaiti", "STKaiti", "BiauKai", "楷体", "Microsoft YaHei", serif;
+  font-weight: bold;
+  font-size: 0.85em;
+  color: #1e3a8a; /* Deep traditional navy */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Dragon Tiles */
+.tile-dragon {
+  font-family: "Kaiti", "STKaiti", "BiauKai", "楷体", "Microsoft YaHei", serif;
+  font-weight: bold;
+  font-size: 0.85em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.dragon-red {
+  color: #dc2626;
+}
+.dragon-green {
+  color: #16a34a;
+}
+.tile-dragon-white {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.white-dragon-frame {
+  width: 65%;
+  height: 72%;
+  border: 0.12em solid #1d4ed8; /* Blue outer frame */
+  border-radius: 0.08em;
+  position: relative;
+  box-sizing: border-box;
+}
+.white-dragon-frame::after {
+  content: '';
+  position: absolute;
+  top: 0.08em;
+  left: 0.08em;
+  right: 0.08em;
+  bottom: 0.08em;
+  border: 0.04em solid #1d4ed8; /* Nested inner thin frame */
+  border-radius: 0.04em;
+}
+
+/* Flower & Season Tiles */
+.tile-flower {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25em 0.12em;
+  box-sizing: border-box;
+  position: relative;
+  font-family: "Kaiti", "STKaiti", "BiauKai", "楷体", "Microsoft YaHei", serif;
+  font-weight: bold;
+}
+.flower-corner-num {
+  position: absolute;
+  top: 0.1em;
+  left: 0.15em;
+  font-size: 0.5em;
+  color: #2563eb; /* Blue number */
   line-height: 1;
 }
-
-.tile-suit {
-  font-size: 1.15rem;
-  margin-top: 8px; /* Offset to center it below the top-left index area */
+.flower-icon {
+  font-size: 0.62em;
+  line-height: 1;
+  margin-top: 0.35em;
 }
-
-/* Scale for meld tiles */
-.melds-row .tile-number {
-  top: 2px;
-  left: 4px;
-  font-size: 0.55rem;
-}
-.melds-row .tile-suit {
-  font-size: 0.85rem;
-  margin-top: 6px;
-}
-
-/* Scale for discard tiles */
-.discard-pile .tile-number {
-  top: 1px;
-  left: 2px;
-  font-size: 0.45rem;
-}
-.discard-pile .tile-suit {
-  font-size: 0.65rem;
-  margin-top: 4px;
-}
-
-/* Scale for center indicator tiles */
-.indicator-tile-render .tile-number {
-  top: 2px;
-  left: 4px;
-  font-size: 0.65rem;
-}
-.indicator-tile-render .tile-suit {
-  font-size: 0.95rem;
-  margin-top: 5px;
+.flower-char {
+  font-size: 0.6em;
+  line-height: 1;
+  color: #ea580c; /* Traditional orange tint */
+  margin-bottom: 0.08em;
 }
 
 @keyframes pulseJinGlow {
   0%, 100% {
-    box-shadow: 0 0 10px var(--gold-glow), 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: 0 0 10px var(--gold-glow);
+    outline-color: var(--gold-primary);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.85), 0 2px 4px rgba(0,0,0,0.3);
-    border-color: #ffe875;
+    box-shadow: 0 0 22px rgba(255, 215, 0, 0.95);
+    outline-color: #ffe875;
   }
 }
 
@@ -857,9 +1202,10 @@ h1 {
   width: 20px;
   height: 28px;
   font-size: 0.65rem;
-  border-bottom-width: 2px;
+  border-radius: 2.5px;
+  border-bottom-width: 1.5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
   cursor: default;
-  border-radius: 2px;
 }
 
 /* Meld tile rendering */
@@ -867,9 +1213,9 @@ h1 {
   width: 28px;
   height: 40px;
   font-size: 0.85rem;
-  border-bottom-width: 2.5px;
-  border-color: #cbd5e1;
-  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border-radius: 4px;
+  border-bottom-width: 2px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.14);
   cursor: default;
 }
 
@@ -878,9 +1224,9 @@ h1 {
   width: 24px;
   height: 34px;
   font-size: 0.75rem;
+  border-radius: 4px;
   border-bottom-width: 2px;
-  border-color: #e2e8f0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.14);
   opacity: 0.85;
   cursor: default;
   color: #ea580c; /* Orange tint for flowers */
@@ -888,12 +1234,25 @@ h1 {
 
 /* Back of Tiles (for opponents) */
 .closed-hand .tile {
-  background: var(--tile-back-bg);
-  border: 1px solid var(--tile-border-dark);
-  border-bottom: 4px solid var(--tile-border-dark);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  background-color: #15803d; /* Solid Jade Green backing */
+  border-color: #166534;
+  border-bottom: 3.5px solid #14532d;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
   cursor: default;
+}
+
+.closed-hand .tile::after {
   content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('https://cdn.jsdelivr.net/gh/FluffyStuff/riichi-mahjong-tiles@master/Regular/Back.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: sepia(1) saturate(3) hue-rotate(90deg) brightness(0.75);
 }
 
 .closed-hand .tile * {
@@ -912,8 +1271,10 @@ h1 {
 .vertical-hand .tile {
   width: 32px;
   height: 22px;
-  border-bottom-width: 1px;
-  border-right: 3px solid var(--tile-border-dark);
+  background-color: #15803d; /* Solid Jade Green backing */
+  border-color: #166534;
+  border-bottom: 1.5px solid #14532d;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
 /* ==========================================================================

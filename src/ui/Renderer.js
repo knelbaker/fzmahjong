@@ -84,26 +84,38 @@ export class Renderer {
       el.classList.add('jin-wildcard');
     }
 
-    let faceContent = '';
+    const cdnBase = 'https://cdn.jsdelivr.net/gh/samoheen/mahjong-tiles@master/hongkong/svg/';
+    let svgFile = '';
+
     if (tile.type === 'character') {
-      faceContent = `<span class="tile-number">${tile.value}</span><span class="tile-suit">万</span>`;
+      const num = tile.value + 7;
+      const numStr = String(num).padStart(2, '0');
+      svgFile = `${numStr}-characters-${tile.value}.svg`;
     } else if (tile.type === 'dot') {
-      faceContent = `<span class="tile-number">${tile.value}</span><span class="tile-suit">筒</span>`;
+      const num = tile.value + 16;
+      const numStr = String(num).padStart(2, '0');
+      svgFile = `${numStr}-circles-${tile.value}.svg`;
     } else if (tile.type === 'bamboo') {
-      faceContent = `<span class="tile-number">${tile.value}</span><span class="tile-suit">条</span>`;
+      const num = tile.value + 25;
+      const numStr = String(num).padStart(2, '0');
+      svgFile = `${numStr}-bamboos-${tile.value}.svg`;
     } else if (tile.type === 'wind') {
-      const winds = ['东', '南', '西', '北'];
-      faceContent = `<span style="font-size:1.25rem;">${winds[tile.value - 1]}</span>`;
+      const windFiles = ['04-east-wind.svg', '05-south-wind.svg', '06-west-wind.svg', '07-north-wind.svg'];
+      svgFile = windFiles[tile.value - 1];
     } else if (tile.type === 'dragon') {
-      const dragons = ['中', '发', '白'];
-      const color = tile.value === 1 ? '#dc2626' : (tile.value === 2 ? '#16a34a' : '#2563eb');
-      faceContent = `<span style="font-size:1.25rem;color:${color}">${dragons[tile.value - 1]}</span>`;
+      const dragonFiles = ['03-red-dragon.svg', '02-green-dragon.svg', '01-white-dragon.svg'];
+      svgFile = dragonFiles[tile.value - 1];
     } else if (tile.type === 'season') {
-      const seasons = ['春', '夏', '秋', '冬'];
-      faceContent = `<span style="font-size:0.6rem;color:#ea580c;text-transform:uppercase;">Seas</span><span style="font-size:0.95rem;font-weight:700;color:#ea580c;">${seasons[tile.value - 1]}</span>`;
+      const seasonFiles = ['35-spring.svg', '36-summer.svg', '37-autumn.svg', '38-winter.svg'];
+      svgFile = seasonFiles[tile.value - 1];
     } else if (tile.type === 'plant') {
-      const plants = ['梅', '兰', '竹', '菊'];
-      faceContent = `<span style="font-size:0.6rem;color:#ea580c;text-transform:uppercase;">Flow</span><span style="font-size:0.95rem;font-weight:700;color:#ea580c;">${plants[tile.value - 1]}</span>`;
+      const plantFiles = ['39-plum.svg', '40-orchid.svg', '42-bamboo.svg', '41-chrysanthemum.svg'];
+      svgFile = plantFiles[tile.value - 1];
+    }
+
+    let faceContent = '';
+    if (svgFile) {
+      faceContent = `<img src="${cdnBase}${svgFile}" alt="${getTileName(tile)}" />`;
     }
 
     el.innerHTML = faceContent;
