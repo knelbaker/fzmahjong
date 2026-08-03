@@ -51,6 +51,10 @@ export class Renderer {
     this.unreadCount = 0;
     this.currentTab = 'logs';
 
+    // Newly drawn tile tracking
+    this.newlyDrawnTileId = null;
+    this.prevPrivateHandIds = [];
+
     this.initEventListeners();
     this.initSidebarEvents();
   }
@@ -477,6 +481,26 @@ export class Renderer {
    * Main rendering routine. Triggered on state updates.
    */
   render(logMessage = '') {
+    // Detect newly drawn tile
+    if (this.state) {
+      const currentHand = this.state.players[0].hand.privateHand || [];
+      if (this.state.phase === 'PLAYING' && this.state.currentPlayerIndex === 0) {
+        if (this.prevPrivateHandIds && this.prevPrivateHandIds.length > 0) {
+          const prevSet = new Set(this.prevPrivateHandIds);
+          const newTile = currentHand.find(t => t && t.id && !prevSet.has(t.id));
+          if (newTile) {
+            this.newlyDrawnTileId = newTile.id;
+          }
+        }
+      } else {
+        this.newlyDrawnTileId = null;
+      }
+
+      if (this.newlyDrawnTileId && !currentHand.some(t => t && t.id === this.newlyDrawnTileId)) {
+        this.newlyDrawnTileId = null;
+      }
+    }
+
     // --- FLIP First Phase: Capture positions of all existing tiles in play ---
     const previousRects = new Map();
     // Select all tiles inside player zones and discard piles
@@ -613,9 +637,15 @@ export class Renderer {
       handRow.innerHTML = '';
 
       if (i === 0) {
-        // Human player hand (always visible, interactive)
         for (const t of player.hand.privateHand) {
           const tileEl = this.createTileDOM(t, '');
+          if (t.id === this.newlyDrawnTileId) {
+            tileEl.classList.add('newly-drawn-highlight');
+            tileEl.addEventListener('mouseenter', () => {
+              tileEl.classList.remove('newly-drawn-highlight');
+              this.newlyDrawnTileId = null;
+            }, { once: true });
+          }
           tileEl.addEventListener('click', () => this.handleTileClick(t));
           handRow.appendChild(tileEl);
         }
@@ -798,6 +828,13 @@ export class Renderer {
           anim.cancel(); // reset properties to normal layout
         };
       }
+    }
+
+    // Store current private hand tile IDs for next render comparison
+    if (this.state && this.state.players && this.state.players[0] && this.state.players[0].hand) {
+      this.prevPrivateHandIds = (this.state.players[0].hand.privateHand || []).map(t => t.id);
+    } else {
+      this.prevPrivateHandIds = [];
     }
   }
 
