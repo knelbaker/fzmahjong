@@ -145,6 +145,32 @@ class SoundManager {
       currentOffset += note.d * 0.8;
     });
   }
+
+  /**
+   * Play a cute, high-pitched double beep/pop for chat messages.
+   */
+  playChat() {
+    this.init();
+    if (!this.ctx) return;
+
+    const time = this.ctx.currentTime;
+    [800, 1000].forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time + idx * 0.05);
+
+      gain.gain.setValueAtTime(0.08, time + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + idx * 0.05 + 0.1);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(time + idx * 0.05);
+      osc.stop(time + idx * 0.05 + 0.1);
+    });
+  }
 }
 
 export const soundManager = new SoundManager();

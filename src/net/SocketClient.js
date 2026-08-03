@@ -10,6 +10,7 @@ export class SocketClient {
 
     this.onLobbyState = null;
     this.onRoomState = null;
+    this.onChatMessage = null;
     this.onError = null;
   }
 
@@ -70,6 +71,10 @@ export class SocketClient {
       if (this.onRoomState) this.onRoomState(data);
     });
 
+    this.socket.on('chat_message', (data) => {
+      if (this.onChatMessage) this.onChatMessage(data);
+    });
+
     this.socket.on('error_message', (msg) => {
       if (this.onError) this.onError(msg);
       else alert(msg);
@@ -116,6 +121,12 @@ export class SocketClient {
   declareAction(actionType, chowMeld = null) {
     if (this.roomCode) {
       this.socket.emit('declare_action', { roomCode: this.roomCode, actionType, chowMeld });
+    }
+  }
+
+  sendChatMessage(message) {
+    if (this.roomCode && this.socket) {
+      this.socket.emit('send_chat_message', { roomCode: this.roomCode, message });
     }
   }
 

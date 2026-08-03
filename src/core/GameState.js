@@ -29,9 +29,9 @@ export class GameState {
   constructor() {
     this.players = [
       new Player(0, 'You (Player)', false),
-      new Player(1, 'Fuzhou Bot 1', true),
-      new Player(2, 'Fuzhou Bot 2', true),
-      new Player(3, 'Fuzhou Bot 3', true)
+      new Player(1, 'Chen', true),
+      new Player(2, 'Lin', true),
+      new Player(3, 'Wong', true)
     ];
     this.dealerIndex = 0;
     this.currentPlayerIndex = 0;

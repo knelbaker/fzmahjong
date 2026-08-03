@@ -58,45 +58,29 @@
 
   <!-- Splash Screen / Start Overlay -->
   <div id="start-overlay" class="overlay">
-    <div class="splash-card">
-      <div class="mahjong-badge">福州麻将</div>
-      <h1>Fuzhou Mahjong</h1>
-      <p class="subtitle">Play traditional Fuzhounese Mahjong solo or online with friends.</p>
-      
-      <div class="rule-features">
-        <div class="feature-item">
-          <span class="icon">✨</span>
-          <div>
-            <strong>Exact Jin Rule</strong>
-            <p>The flipped tile from the back of the wall becomes the wildcard Jin.</p>
-          </div>
-        </div>
-        <div class="feature-item">
-          <span class="icon">🌐</span>
-          <div>
-            <strong>Online Multiplayer</strong>
-            <p>Create room codes, invite friends, and auto-fill empty seats with bots.</p>
-          </div>
-        </div>
-        <div class="feature-item">
-          <span class="icon">👑</span>
-          <div>
-            <strong>Fuzhou Scoring (水)</strong>
-            <p>Multipliers for San Jin Dao (三金倒), Jin Que (金雀), Jin Long (金龙), and No Jin (无金).</p>
-          </div>
-        </div>
+    <div class="start-card">
+      <div class="landing-header">
+        <div class="mahjong-badge-premium">福州麻将</div>
+        <h1 class="landing-title">Fuzhou Mahjong</h1>
+        <p class="landing-subtitle">A tactical implementation of traditional Fuzhounese rules. Play solo against adaptive AI or host a room with friends.</p>
       </div>
       
-      <div class="mode-buttons">
-        <button id="btn-mode-single" class="btn primary large-btn">🎮 Single Player (vs Bots)</button>
-        <button id="btn-mode-multi" class="btn secondary large-btn">🌐 Online Multiplayer</button>
+      <div class="mode-buttons-grid">
+        <button id="btn-mode-single" class="btn-landing btn-primary-landing">
+          <span class="btn-landing-title">Single Player</span>
+          <span class="btn-landing-desc">Play against bots offline</span>
+        </button>
+        <button id="btn-mode-multi" class="btn-landing btn-secondary-landing">
+          <span class="btn-landing-title">Online Multiplayer</span>
+          <span class="btn-landing-desc">Create or join rooms</span>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Online Multiplayer Lobby Modal -->
   <div id="multiplayer-overlay" class="overlay hidden">
-    <div class="splash-card mp-card">
+    <div class="lobby-card mp-card">
       <div class="mahjong-badge">Online Lobby</div>
       <h2>Play Against Friends</h2>
       
@@ -130,7 +114,7 @@
         <div class="room-code-banner">
           <span>ROOM CODE:</span>
           <strong id="display-room-code" class="code-highlight">MJ92</strong>
-          <button id="btn-copy-code" class="btn small-btn secondary">📋 Copy</button>
+          <button id="btn-copy-code" class="btn small-btn secondary">Copy</button>
         </div>
 
         <div class="lobby-seats-grid">
@@ -159,7 +143,7 @@
         <div class="bot-toggle-row">
           <label class="checkbox-label">
             <input type="checkbox" id="chk-fill-bots" checked>
-            <span>Fill empty seats with Fuzhou Bots</span>
+            <span>Fill empty seats with Bots</span>
           </label>
         </div>
 
@@ -222,9 +206,12 @@
       </div>
     </header>
 
-    <!-- Main Mahjong Table View -->
-    <main class="table-area">
-      <div class="mahjong-table">
+    <!-- Game Body Wrapper (Flex container for Table and Sidebar) -->
+    <div class="game-body-wrapper">
+      
+      <!-- Main Mahjong Table View -->
+      <main class="table-area">
+        <div class="mahjong-table">
         
         <!-- Opponent Top (Player 2) -->
         <div class="player-zone top-zone" id="zone-p2">
@@ -317,6 +304,59 @@
 
       </div>
     </main>
+
+    <!-- Chat & Gameplay Log Sidebar -->
+    <aside id="chat-sidebar" class="chat-sidebar collapsed">
+      <!-- Toggle button standing out on the right -->
+      <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" title="Toggle Chat & Logs">
+        <span class="toggle-icon">▶</span>
+        <span id="sidebar-badge" class="sidebar-badge hidden">0</span>
+      </button>
+      
+      <div class="sidebar-content-wrapper">
+        <div class="sidebar-inner">
+          <!-- Sidebar Tabs -->
+          <div class="sidebar-tabs">
+            <button id="tab-btn-logs" class="tab-btn active" data-tab="logs">Game Log</button>
+            <button id="tab-btn-chat" class="tab-btn" data-tab="chat">Chat</button>
+          </div>
+          
+          <!-- Logs Panel -->
+          <div id="tab-content-logs" class="tab-content">
+            <div id="log-list" class="log-list-container">
+              <!-- Logs dynamically appended here -->
+            </div>
+          </div>
+          
+          <!-- Chat Panel -->
+          <div id="tab-content-chat" class="tab-content hidden">
+            <div id="chat-list" class="chat-list-container">
+              <!-- Chat messages dynamically appended here -->
+            </div>
+            
+            <!-- Quick Reaction Panel -->
+            <div class="quick-reactions">
+              <button class="quick-react-btn" data-msg="🀄">🀄</button>
+              <button class="quick-react-btn" data-msg="碰!">碰!</button>
+              <button class="quick-react-btn" data-msg="吃!">吃!</button>
+              <button class="quick-react-btn" data-msg="杠!">杠!</button>
+              <button class="quick-react-btn" data-msg="胡!">胡!</button>
+              <button class="quick-react-btn" data-msg="👍">👍</button>
+              <button class="quick-react-btn" data-msg="😲">😲</button>
+              <button class="quick-react-btn" data-msg="😂">😂</button>
+            </div>
+
+            <!-- Text Input -->
+            <div class="chat-input-row">
+              <input type="text" id="chat-input" placeholder="Type a message..." maxlength="100">
+              <button id="btn-send-chat" class="btn primary">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
 
     <!-- Bottom Action Control Panel (Floating overlay) -->
     <div id="action-hud" class="action-hud-container hidden">

@@ -32,7 +32,31 @@ export class Renderer {
     this.resultsModal = document.getElementById('results-modal');
     this.btnNextDeal = document.getElementById('btn-next-deal');
 
+    // Sidebar DOM Cache
+    this.sidebar = document.getElementById('chat-sidebar');
+    this.btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    this.sidebarBadge = document.getElementById('sidebar-badge');
+    this.tabBtnLogs = document.getElementById('tab-btn-logs');
+    this.tabBtnChat = document.getElementById('tab-btn-chat');
+    this.tabContentLogs = document.getElementById('tab-content-logs');
+    this.tabContentChat = document.getElementById('tab-content-chat');
+    this.logList = document.getElementById('log-list');
+    this.chatList = document.getElementById('chat-list');
+    this.chatInput = document.getElementById('chat-input');
+    this.btnSendChat = document.getElementById('btn-send-chat');
+
+    // Sidebar state & history
+    this.logHistory = [];
+    this.chatHistory = [];
+    this.unreadCount = 0;
+    this.currentTab = 'logs';
+
+    // Newly drawn tile tracking
+    this.newlyDrawnTileId = null;
+    this.prevPrivateHandIds = [];
+
     this.initEventListeners();
+    this.initSidebarEvents();
   }
 
   /**
@@ -74,6 +98,330 @@ export class Renderer {
         this.controller.startNewHand();
       }
     });
+  }
+
+  /**
+   * Initializes Sidebar UI events (Toggle, tab switches, text chat & predefined clicks).
+   */
+  initSidebarEvents() {
+    if (!this.sidebar) return;
+
+    // Toggle sidebar collapsed state
+    this.btnToggleSidebar.addEventListener('click', () => {
+      this.sidebar.classList.toggle('collapsed');
+      if (!this.sidebar.classList.contains('collapsed')) {
+        this.unreadCount = 0;
+        this.sidebarBadge.textContent = '0';
+        this.sidebarBadge.classList.add('hidden');
+        
+        setTimeout(() => {
+          this.logList.scrollTop = this.logList.scrollHeight;
+          this.chatList.scrollTop = this.chatList.scrollHeight;
+        }, 100);
+      }
+    });
+
+    // Tab switching
+    const switchTab = (tabName) => {
+      this.currentTab = tabName;
+      if (tabName === 'logs') {
+        this.tabBtnLogs.classList.add('active');
+        this.tabBtnChat.classList.remove('active');
+        this.tabContentLogs.classList.remove('hidden');
+        this.tabContentChat.classList.add('hidden');
+        this.logList.scrollTop = this.logList.scrollHeight;
+      } else {
+        this.tabBtnChat.classList.add('active');
+        this.tabBtnLogs.classList.remove('active');
+        this.tabContentChat.classList.remove('hidden');
+        this.tabContentLogs.classList.add('hidden');
+        this.chatList.scrollTop = this.chatList.scrollHeight;
+        
+        // Reset unreadCount and hide badge when switching to the Chat tab
+        if (!this.sidebar.classList.contains('collapsed')) {
+          this.unreadCount = 0;
+          this.sidebarBadge.textContent = '0';
+          this.sidebarBadge.classList.add('hidden');
+        }
+      }
+    };
+
+    this.tabBtnLogs.addEventListener('click', () => switchTab('logs'));
+    this.tabBtnChat.addEventListener('click', () => switchTab('chat'));
+
+    // Send chat button
+    this.btnSendChat.addEventListener('click', () => this.sendChatFromUI());
+    this.chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.sendChatFromUI();
+      }
+    });
+
+    // Quick reactions
+    const quickReactBtns = this.sidebar.querySelectorAll('.quick-react-btn');
+    quickReactBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const msg = btn.dataset.msg;
+        if (msg) {
+          this.sendChat(msg);
+        }
+      });
+    });
+  }
+
+  sendChat(msg) {
+    if (!msg || !msg.trim()) return;
+    
+    if (this.socketClient && this.socketClient.isMultiplayer) {
+      this.socketClient.sendChatMessage(msg);
+    } else {
+      // Single Player Mode local message
+      this.addChatMessage({
+        senderName: 'You',
+        senderSeatIndex: 0,
+        message: msg,
+        isSelf: true,
+        timestamp: Date.now()
+      });
+
+      this.triggerBotReplies(msg);
+    }
+  }
+
+  sendChatFromUI() {
+    const msg = this.chatInput.value.trim();
+    if (!msg) return;
+    this.chatInput.value = '';
+    this.sendChat(msg);
+  }
+
+  triggerBotReplies(playerMsg) {
+    const randBotIdx = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+    const botPlayer = this.state.players[randBotIdx];
+    if (!botPlayer) return;
+
+    const botName = botPlayer.name;
+
+    const chenPhrases = [
+      "I'm going to win this hand, just watch!",
+      "Stop talking and discard a tile!",
+      "Do you have the Jin? I bet you do.",
+      "Your discards are way too safe. Boring!",
+      "I will Pung the next tile you throw.",
+      "Just wait... my hand is getting perfect."
+    ];
+
+    const linPhrases = [
+      "Let's play carefully.",
+      "Good game so far, everyone.",
+      "Fuzhou Mahjong is a game of patience and skill.",
+      "I am analyzing your discards closely.",
+      "May the best player win today.",
+      "Ah, that was a strategic discard."
+    ];
+
+    const wongPhrases = [
+      "Oh my god! I only need one more tile to Hu!",
+      "Did someone discard a flower? I want it!",
+      "No Jins for me yet... where are they hiding?",
+      "What a beautiful tile you just discarded!",
+      "I'm sweating! This match is intense.",
+      "Is it my turn yet? I can't wait!"
+    ];
+
+    let phrases = linPhrases;
+    if (randBotIdx === 1) phrases = chenPhrases;
+    else if (randBotIdx === 3) phrases = wongPhrases;
+
+    if (Math.random() < 0.75) {
+      const delay = 800 + Math.random() * 800;
+      const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+      setTimeout(() => {
+        this.addChatMessage({
+          senderName: botName,
+          senderSeatIndex: randBotIdx,
+          message: phrase,
+          isSelf: false,
+          isBot: true,
+          timestamp: Date.now()
+        });
+      }, delay);
+    }
+  }
+
+  checkActionForBotChat(logMessage) {
+    if (this.socketClient && this.socketClient.isMultiplayer) return;
+    if (!this.state || !this.state.players) return;
+
+    const randChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    // Find which bot (indices 1, 2, 3) is mentioned in the log message
+    const botIdx = this.state.players.findIndex((p, idx) => idx > 0 && logMessage.includes(p.name));
+    if (botIdx <= 0) return;
+
+    const botName = this.state.players[botIdx].name;
+
+    if (logMessage.includes('declares PUNG') || logMessage.includes('declares CHOW') || logMessage.includes('declares KONG')) {
+      const actionType = logMessage.includes('PUNG') ? 'PUNG' : (logMessage.includes('KONG') ? 'KONG' : 'CHOW');
+      let text = '';
+      if (actionType === 'PUNG') {
+        text = randChoice([
+          "PUNG! Yes, thank you for that tile!",
+          "碰! Exactly what I needed.",
+          "Nice, that PUNG advances my hand a lot."
+        ]);
+      } else if (actionType === 'KONG') {
+        text = randChoice([
+          "KONG (杠)! I get a replacement from the back of the wall.",
+          "杠! Watch out, my scoring multiplier is growing!",
+          "Ah, Kong! Let's see my replacement card."
+        ]);
+      } else {
+        text = randChoice([
+          "CHOW (吃)! Thank you.",
+          "吃! I'll eat that."
+        ]);
+      }
+      
+      setTimeout(() => {
+        this.addChatMessage({
+          senderName: botName,
+          senderSeatIndex: botIdx,
+          message: text,
+          isSelf: false,
+          isBot: true,
+          timestamp: Date.now()
+        });
+      }, 600 + Math.random() * 600);
+    } else if (logMessage.includes('won by') || logMessage.includes('HU')) {
+      const text = randChoice([
+        "HU! I win! Excellent game.",
+        "胡! That's a winning hand for me!",
+        "Haha, I won! Better luck next deal."
+      ]);
+      setTimeout(() => {
+        this.addChatMessage({
+          senderName: botName,
+          senderSeatIndex: botIdx,
+          message: text,
+          isSelf: false,
+          isBot: true,
+          timestamp: Date.now()
+        });
+      }, 800);
+    }
+  }
+
+  addLog(msg) {
+    if (!msg || !msg.trim()) return;
+
+    if (this.logHistory.length > 0 && this.logHistory[this.logHistory.length - 1] === msg) {
+      return;
+    }
+
+    this.logHistory.push(msg);
+
+    const el = document.createElement('div');
+    
+    let isHu = msg.includes('HU') || msg.includes('won') || msg.includes('WINNER');
+    let isAction = msg.includes('discarded') || msg.includes('declared') || msg.includes('declares') || msg.includes('draws') || msg.includes('drew') || msg.includes('replacing');
+    
+    if (isHu) el.className = 'log-item hu';
+    else if (isAction) el.className = 'log-item action';
+    else el.className = 'log-item system';
+
+    let formattedText = msg;
+    const tileRegex = /(?:\[)?(character|dot|bamboo|wind|dragon|season|plant) (\d+)(?:\])?/gi;
+    formattedText = formattedText.replace(tileRegex, (match, type, value) => {
+      return this.createMiniTileHTML(type.toLowerCase(), value);
+    });
+
+    el.innerHTML = formattedText;
+    this.logList.appendChild(el);
+    this.logList.scrollTop = this.logList.scrollHeight;
+
+    // Echo to console ticker at bottom
+    this.consoleLogs.innerHTML = formattedText;
+
+    // Game logs should not trigger notification badges
+  }
+
+  createMiniTileHTML(type, value) {
+    const cdnBase = 'https://cdn.jsdelivr.net/gh/samoheen/mahjong-tiles@master/hongkong/svg/';
+    let svgFile = '';
+    const val = parseInt(value, 10);
+
+    if (type === 'character') {
+      const num = val + 7;
+      const numStr = String(num).padStart(2, '0');
+      svgFile = `${numStr}-characters-${val}.svg`;
+    } else if (type === 'dot') {
+      const num = val + 16;
+      const numStr = String(num).padStart(2, '0');
+      svgFile = `${numStr}-circles-${val}.svg`;
+    } else if (type === 'bamboo') {
+      const num = val + 25;
+      const numStr = String(num).padStart(2, '0');
+      svgFile = `${numStr}-bamboos-${val}.svg`;
+    } else if (type === 'wind') {
+      const windFiles = ['04-east-wind.svg', '05-south-wind.svg', '06-west-wind.svg', '07-north-wind.svg'];
+      svgFile = windFiles[val - 1];
+    } else if (type === 'dragon') {
+      const dragonFiles = ['03-red-dragon.svg', '02-green-dragon.svg', '01-white-dragon.svg'];
+      svgFile = dragonFiles[val - 1];
+    } else if (type === 'season') {
+      const seasonFiles = ['35-spring.svg', '36-summer.svg', '37-autumn.svg', '38-winter.svg'];
+      svgFile = seasonFiles[val - 1];
+    } else if (type === 'plant') {
+      const plantFiles = ['39-plum.svg', '40-orchid.svg', '42-bamboo.svg', '41-chrysanthemum.svg'];
+      svgFile = plantFiles[val - 1];
+    }
+
+    const tileName = getTileName({ type, value: val });
+    if (svgFile) {
+      return `<span class="inline-mini-tile" title="${tileName}"><img src="${cdnBase}${svgFile}" alt="${tileName}" /></span>`;
+    }
+    return `[${tileName}]`;
+  }
+
+  addChatMessage(data) {
+    this.chatHistory.push(data);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chat-bubble-wrapper';
+
+    if (data.isSelf) {
+      wrapper.classList.add('self');
+    } else if (data.isBot) {
+      wrapper.classList.add('bot');
+    } else {
+      wrapper.classList.add('other');
+    }
+
+    const date = data.timestamp ? new Date(data.timestamp) : new Date();
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const meta = document.createElement('div');
+    meta.className = 'chat-meta';
+    meta.textContent = `${data.senderName} • ${timeStr}`;
+    wrapper.appendChild(meta);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = data.message;
+    wrapper.appendChild(bubble);
+
+    this.chatList.appendChild(wrapper);
+    this.chatList.scrollTop = this.chatList.scrollHeight;
+
+    soundManager.playChat();
+
+    if (this.sidebar.classList.contains('collapsed') || this.currentTab !== 'chat') {
+      this.unreadCount++;
+      this.sidebarBadge.textContent = this.unreadCount;
+      this.sidebarBadge.classList.remove('hidden');
+    }
   }
 
   /**
@@ -133,6 +481,26 @@ export class Renderer {
    * Main rendering routine. Triggered on state updates.
    */
   render(logMessage = '') {
+    // Detect newly drawn tile
+    if (this.state) {
+      const currentHand = this.state.players[0].hand.privateHand || [];
+      if (this.state.phase === 'PLAYING' && this.state.currentPlayerIndex === 0) {
+        if (this.prevPrivateHandIds && this.prevPrivateHandIds.length > 0) {
+          const prevSet = new Set(this.prevPrivateHandIds);
+          const newTile = currentHand.find(t => t && t.id && !prevSet.has(t.id));
+          if (newTile) {
+            this.newlyDrawnTileId = newTile.id;
+          }
+        }
+      } else {
+        this.newlyDrawnTileId = null;
+      }
+
+      if (this.newlyDrawnTileId && !currentHand.some(t => t && t.id === this.newlyDrawnTileId)) {
+        this.newlyDrawnTileId = null;
+      }
+    }
+
     // --- FLIP First Phase: Capture positions of all existing tiles in play ---
     const previousRects = new Map();
     // Select all tiles inside player zones and discard piles
@@ -239,7 +607,7 @@ export class Renderer {
       const flowersRow = document.getElementById(`flowers-p${i}`);
       flowersRow.innerHTML = '';
       for (const t of player.hand.flowers) {
-        flowersRow.appendChild(this.createTileDOM(t, 'flowers-row'));
+        flowersRow.appendChild(this.createTileDOM(t, 'flower-tile'));
       }
 
       // Render Melds
@@ -252,7 +620,7 @@ export class Renderer {
         group.style.gap = '2px';
         group.style.padding = '0 2px';
         for (const t of meld.tiles) {
-          group.appendChild(this.createTileDOM(t, 'melds-row'));
+          group.appendChild(this.createTileDOM(t, 'meld-tile'));
         }
         meldsRow.appendChild(group);
       }
@@ -261,7 +629,7 @@ export class Renderer {
       const discardsPile = document.getElementById(`discards-p${i}`);
       discardsPile.innerHTML = '';
       for (const t of player.discards) {
-        discardsPile.appendChild(this.createTileDOM(t, 'discard-pile'));
+        discardsPile.appendChild(this.createTileDOM(t, 'discard-tile'));
       }
 
       // Render Hands (closed or open)
@@ -269,9 +637,15 @@ export class Renderer {
       handRow.innerHTML = '';
 
       if (i === 0) {
-        // Human player hand (always visible, interactive)
         for (const t of player.hand.privateHand) {
           const tileEl = this.createTileDOM(t, '');
+          if (t.id === this.newlyDrawnTileId) {
+            tileEl.classList.add('newly-drawn-highlight');
+            tileEl.addEventListener('mouseenter', () => {
+              tileEl.classList.remove('newly-drawn-highlight');
+              this.newlyDrawnTileId = null;
+            }, { once: true });
+          }
           tileEl.addEventListener('click', () => this.handleTileClick(t));
           handRow.appendChild(tileEl);
         }
@@ -280,7 +654,7 @@ export class Renderer {
         const isGameOver = this.state.phase === GamePhase.GAME_OVER;
         for (const t of player.hand.privateHand) {
           if (isGameOver) {
-            handRow.appendChild(this.createTileDOM(t, 'melds-row')); // show small face-up
+            handRow.appendChild(this.createTileDOM(t, 'meld-tile')); // show small face-up
           } else {
             // Render closed backs
             const backEl = document.createElement('div');
@@ -295,9 +669,10 @@ export class Renderer {
     // 5. Render Control HUD (Action overlays)
     this.updateActionHUD();
 
-    // 6. Output log message to console ticker
+    // 6. Output log message to console ticker & sidebar log history
     if (logMessage) {
-      this.consoleLogs.textContent = logMessage;
+      this.addLog(logMessage);
+      this.checkActionForBotChat(logMessage);
       
       // Play matching sounds based on log details
       if (logMessage.includes('discarded')) {
@@ -453,6 +828,13 @@ export class Renderer {
           anim.cancel(); // reset properties to normal layout
         };
       }
+    }
+
+    // Store current private hand tile IDs for next render comparison
+    if (this.state && this.state.players && this.state.players[0] && this.state.players[0].hand) {
+      this.prevPrivateHandIds = (this.state.players[0].hand.privateHand || []).map(t => t.id);
+    } else {
+      this.prevPrivateHandIds = [];
     }
   }
 
@@ -631,7 +1013,7 @@ export class Renderer {
       // Visualise the option
       const tilesToDisplay = [discTile, ...comb];
       for (const t of tilesToDisplay) {
-        optGroup.appendChild(this.createTileDOM(t, 'discard-pile'));
+        optGroup.appendChild(this.createTileDOM(t, 'discard-tile'));
       }
 
       optGroup.addEventListener('click', () => {
