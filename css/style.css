@@ -2251,4 +2251,118 @@ select.styled-input option {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ==========================================================================
+   Rules Modal Styling
+   ========================================================================== */
+
+.rules-card {
+  background: var(--card-bg-glass);
+  border: 1px solid var(--card-border-glass);
+  box-shadow: var(--card-shadow);
+  border-radius: 24px;
+  padding: 36px;
+  max-width: 680px;
+  width: 90%;
+  text-align: center;
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.rules-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.rules-tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  outline: none;
+}
+
+.rules-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rules-tab-btn.active {
+  color: var(--gold-primary);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.2);
+}
+
+.rules-content-container {
+  flex: 1;
+  overflow-y: auto;
+  text-align: left;
+  padding-right: 12px;
+  margin-bottom: 24px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.rules-content-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rules-content-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rules-content-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.rules-content-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rules-tab-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--gold-primary);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.rules-tab-content h3:first-of-type {
+  margin-top: 4px;
+}
+
+.rules-tab-content p {
+  color: #d1d5db;
+  margin-bottom: 12px;
+}
+
+.rules-tab-content ul {
+  margin-left: 20px;
+  margin-bottom: 12px;
+  color: #d1d5db;
+}
+
+.rules-tab-content li {
+  margin-bottom: 6px;
+}
+
+.rules-tab-content strong {
+  color: #fff;
+}
+
+
 

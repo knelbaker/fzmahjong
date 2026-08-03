@@ -77,6 +77,7 @@
             <span class="btn-landing-desc">Create or join rooms</span>
           </button>
         </div>
+        <button id="btn-landing-rules" class="close-text-btn" style="margin-top: 24px; display: block; margin-left: auto; margin-right: auto;">Game Rules</button>
       </div>
 
       <!-- Single Player Difficulty View -->
@@ -214,6 +215,7 @@
       <div class="brand">
         <span class="logo-text">福州麻将</span>
         <span id="room-code-tag" class="badge hidden">ROOM: MJ92</span>
+        <button id="btn-open-rules" class="btn small-btn secondary" style="padding: 6px 14px; font-size: 0.8rem; font-family: var(--font-display); margin-left: 6px;">Rules</button>
       </div>
 
       <div class="dashboard-stats">
@@ -484,6 +486,109 @@
 
       <div class="modal-actions">
         <button id="btn-next-deal" class="btn primary large-btn">Next Deal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules Modal -->
+  <div id="rules-overlay" class="overlay hidden">
+    <div class="rules-card">
+      <div class="mahjong-badge">Game Rules</div>
+      <h2 style="font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; margin-bottom: 20px;">Fuzhounese Mahjong (福州麻将)</h2>
+      
+      <!-- Rules Navigation Tabs -->
+      <div class="rules-tabs">
+        <button class="rules-tab-btn active" data-tab="rules-overview">Overview</button>
+        <button class="rules-tab-btn" data-tab="rules-jin">Wildcard (Jin)</button>
+        <button class="rules-tab-btn" data-tab="rules-hu">Winning (Hu)</button>
+        <button class="rules-tab-btn" data-tab="rules-scoring">Scoring (水)</button>
+      </div>
+      
+      <!-- Rules Content Panels -->
+      <div class="rules-content-container">
+        
+        <!-- Overview Panel -->
+        <div id="rules-overview" class="rules-tab-content">
+          <h3>Introduction</h3>
+          <p>Fuzhounese Mahjong is a popular variation of traditional Mahjong played with <strong>144 tiles</strong>. It is a fast-paced game that heavily features <strong>Flower replacement (补花)</strong> and a dynamic <strong>Wildcard (Jin / 金)</strong>.</p>
+          <h3>The Tile Set</h3>
+          <ul>
+            <li><strong>Suit Tiles:</strong> Characters (万), Dots (饼), and Bamboos (条) numbered 1-9 (108 tiles).</li>
+            <li><strong>Flower Tiles (36 tiles):</strong>
+              <ul>
+                <li>Winds: East (东), South (南), West (西), North (北) (16 tiles)</li>
+                <li>Dragons: Red (中), Green (发), White (白) (12 tiles)</li>
+                <li>Seasons: Spring (春), Summer (夏), Autumn (秋), Winter (冬) (4 tiles)</li>
+                <li>Plants: Plum (梅), Orchid (兰), Bamboo (竹), Chrysanthemum (菊) (4 tiles)</li>
+              </ul>
+            </li>
+          </ul>
+          <p><strong>Note:</strong> In Fuzhounese Mahjong, Winds and Dragons are treated as Flower tiles. They cannot be held in the hand or form normal melds; they must be declared and replaced (补花) immediately upon drawing.</p>
+        </div>
+        
+        <!-- Jin Panel -->
+        <div id="rules-jin" class="rules-tab-content hidden">
+          <h3>The Wildcard (Jin / 金)</h3>
+          <p>The defining mechanic of Fuzhou Mahjong is the <strong>Jin (金)</strong>, a wildcard tile that can substitute for any suit tile to form a meld (Chow, Pung, or Kong).</p>
+          <h3>Determining the Jin</h3>
+          <p>After dealing and initial flower replacement, the dealer flips over a tile from the back of the wall (the <strong>Jin Indicator</strong>).</p>
+          <ul>
+            <li>The tile identical to the indicator becomes the <strong>Jin</strong>. For example, if a 4 of Dots is flipped, then all remaining 4 of Dots in play are Jin tiles.</li>
+            <li>If a Flower tile is flipped as the indicator, it is automatically given to the dealer, and another tile is flipped from the back until a suit tile is revealed.</li>
+          </ul>
+          <h3>Special Rules for Jin</h3>
+          <ul>
+            <li>A Jin tile in the hand glows gold to signify its wildcard status.</li>
+            <li>You cannot discard a Jin tile unless you hold 4 Jin tiles or are declaring a special win condition.</li>
+          </ul>
+        </div>
+        
+        <!-- Hu Panel -->
+        <div id="rules-hu" class="rules-tab-content hidden">
+          <h3>Winning Hand Conditions</h3>
+          <p>To declare a win (Hu / 胡), a player's hand must consist of <strong>4 melds and 1 pair</strong> (17 tiles in hand/melds total). Melds are Chow (runs), Pung (triplets), or Kong (quads). The Jin can substitute for any suit tile.</p>
+          <h3>Special Winning Hands</h3>
+          <ul>
+            <li><strong>San Jin Dao (三金倒):</strong> Having exactly 3 Jin tiles in hand is an automatic instant win, regardless of the rest of the hand structure.</li>
+            <li><strong>Jin Que (金雀 - Gold Sparrow):</strong> A winning hand where two Jin tiles are used specifically as the eye/pair (雀头).</li>
+            <li><strong>Jin Long (金龙 - Gold Dragon):</strong> A winning hand where three Jin tiles are used to form a triplet (Pung).</li>
+            <li><strong>Qiang Jin (抢金 - Robbing Jin):</strong> Drawing a Jin tile on the player's very first turn of the game results in an automatic instant win.</li>
+            <li><strong>No Jin (无金):</strong> Winning the hand without using any Jin tiles as wildcards (increases your multiplier).</li>
+          </ul>
+          <h3>Action Priority</h3>
+          <p>When a tile is discarded, actions are prioritized in this order: <strong>Hu (胡) > Pung (碰) / Kong (杠) > Chow (吃)</strong>. Chow can only be declared from the player directly to your left.</p>
+        </div>
+        
+        <!-- Scoring Panel -->
+        <div id="rules-scoring" class="rules-tab-content hidden">
+          <h3>Score (水 / Points) Calculation</h3>
+          <p>Fuzhou scoring is calculated by summing base elements (points or "water") and applying a multiplier based on the win condition:</p>
+          <p style="font-weight: bold; text-align: center; margin-bottom: 16px; color: var(--gold-primary);">Total Score = (Base + Flowers + Jins + Kongs + Dealer Streak) × Win Multiplier</p>
+          
+          <h3>Base Points</h3>
+          <ul>
+            <li><strong>Base:</strong> 3 points (底分).</li>
+            <li><strong>Flower Tiles:</strong> +1 point per flower. A complete set of 4 identical winds/seasons/plants counts as 6 flowers.</li>
+            <li><strong>Jins in Hand:</strong> +1 point per Jin tile.</li>
+            <li><strong>Kongs:</strong> Ming Kong (+1), An Kong (+2), Wind/Dragon Kong (+2).</li>
+            <li><strong>Dealer Streak (连庄):</strong> Dynamic points depending on how many consecutive rounds the dealer has won/held.</li>
+          </ul>
+          
+          <h3>Multipliers (番数)</h3>
+          <ul>
+            <li><strong>Ping Hu (平胡):</strong> 1x (discarded by opponent)</li>
+            <li><strong>Self-Drawn (自摸):</strong> 2x (drawn from wall by winner)</li>
+            <li><strong>No Jin (无金):</strong> 2x</li>
+            <li><strong>San Jin Dao (三金倒):</strong> 3x</li>
+            <li><strong>Jin Que (金雀) / Jin Long (金龙):</strong> 4x</li>
+            <li><strong>Robbing Jin (抢金):</strong> 5x</li>
+          </ul>
+        </div>
+        
+      </div>
+      
+      <div class="modal-actions" style="margin-top: 0;">
+        <button id="btn-close-rules" class="btn primary large-btn" style="padding: 12px 30px; font-size: 1rem;">Close</button>
       </div>
     </div>
   </div>

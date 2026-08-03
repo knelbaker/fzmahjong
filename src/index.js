@@ -97,6 +97,61 @@ document.addEventListener('DOMContentLoaded', () => {
     startOverlay.classList.remove('hidden');
   });
 
+  // --- Rules Page Handlers ---
+  const rulesOverlay = document.getElementById('rules-overlay');
+  const btnLandingRules = document.getElementById('btn-landing-rules');
+  const btnOpenRules = document.getElementById('btn-open-rules');
+  const btnCloseRules = document.getElementById('btn-close-rules');
+  const rulesTabBtns = document.querySelectorAll('.rules-tab-btn');
+  const rulesTabContents = document.querySelectorAll('.rules-tab-content');
+
+  const openRules = () => {
+    soundManager.playAction();
+    rulesOverlay.classList.remove('hidden');
+  };
+
+  const closeRules = () => {
+    soundManager.playAction();
+    rulesOverlay.classList.add('hidden');
+  };
+
+  if (btnLandingRules) {
+    btnLandingRules.addEventListener('click', openRules);
+  }
+  if (btnOpenRules) {
+    btnOpenRules.addEventListener('click', openRules);
+  }
+  if (btnCloseRules) {
+    btnCloseRules.addEventListener('click', closeRules);
+  }
+
+  if (rulesOverlay) {
+    rulesOverlay.addEventListener('click', (e) => {
+      if (e.target === rulesOverlay) {
+        closeRules();
+      }
+    });
+  }
+
+  rulesTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      soundManager.playAction();
+      const targetTabId = btn.getAttribute('data-tab');
+      
+      rulesTabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      rulesTabContents.forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+    });
+  });
+
+
   // --- 2. Tab Navigation ---
   tabCreateRoom.addEventListener('click', () => {
     tabCreateRoom.classList.add('active');
