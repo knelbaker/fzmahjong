@@ -2,9 +2,13 @@ import { Wall } from '../src/core/Wall.js';
 import { GameState, GamePhase, Player } from '../src/core/GameState.js';
 import { RulesEngine } from '../src/core/RulesEngine.js';
 import { BotAI } from '../src/engine/BotAI.js';
-import { isFlower } from '../src/core/Tile.js';
+import { isFlower, sortTiles } from '../src/core/Tile.js';
 
 export class MultiplayerGame {
+  static sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   static async startNewHand(room, broadcastUpdate) {
     if (!room.gameState) {
       room.gameState = new GameState();
@@ -17,6 +21,9 @@ export class MultiplayerGame {
 
     gs.wall = new Wall();
     gs.wall.shuffle();
+
+    broadcastUpdate(room, 'Shuffling and building the wall...');
+    await MultiplayerGame.sleep(800);
 
     // Deal tiles: 17 to dealer, 16 to others
     for (let p = 0; p < 4; p++) {
@@ -35,52 +42,65 @@ export class MultiplayerGame {
     }
 
     gs.phase = GamePhase.FLOWER_REPLACEMENT;
-    broadcastUpdate(room, 'Hands dealt. Performing flower replacement...');
+    broadcastUpdate(room, 'Hands dealt. Starting flower replacements...');
+    await MultiplayerGame.sleep(1800);
 
     // Execute flower replacement loop
-    await MultiplayerGame.runFlowerReplacements(gs);
+    await MultiplayerGame.runFlowerReplacements(room, gs, broadcastUpdate);
 
-    // Reveal Jin indicator
     gs.phase = GamePhase.OPEN_JIN;
-    gs.wall.revealJinIndicator();
-    broadcastUpdate(room, `Jin indicator flipped: ${gs.wall.jinIndicator ? gs.wall.jinIndicator.type + ' ' + gs.wall.jinIndicator.value : ''}`);
+    broadcastUpdate(room, 'Flower replacement complete. Opening the Jin...');
+    await MultiplayerGame.sleep(1000);
+
+    // Reveal Jin indicator (exact Fuzhou rule)
+    const dealer = gs.players[gs.dealerIndex];
+    const { indicator, flowersGivenToDealer } = gs.wall.revealJin(dealer.hand);
+
+    if (flowersGivenToDealer.length > 0) {
+      broadcastUpdate(room, `Flipped flower card(s) during Jin opening. Gained by dealer for free: ${flowersGivenToDealer.map(t => t.value).join(', ')}`);
+      await MultiplayerGame.sleep(800);
+      dealer.hand.sort();
+    }
+
+    broadcastUpdate(room, `Jin opened! Indicator is [${indicator ? indicator.type + ' ' + indicator.value : ''}]. The Jin wildcard is identical!`);
+    await MultiplayerGame.sleep(1500);
 
     // Check dealer initial hand win (San Jin Dao or Qiang Jin)
-    const dealer = gs.players[gs.dealerIndex];
-    const initialHu = RulesEngine.checkSelfDrawnHu(dealer.hand, gs.wall.jinTile, dealer.hand.privateHand[dealer.hand.privateHand.length - 1]);
-    if (initialHu.canHu) {
-      MultiplayerGame.handleWin(room, gs.dealerIndex, initialHu, broadcastUpdate);
+    const initialHu = RulesEngine.checkHu(dealer.hand, null, gs.wall.jinTile, true);
+    if (initialHu.hu) {
+      const winDetails = RulesEngine.calculateScore(dealer.hand, gs.wall.jinTile, 'self_draw', true, gs.dealerIndex, gs.dealerIndex, gs.lianzhuangCount);
+      MultiplayerGame.handleWin(room, gs.dealerIndex, winDetails, broadcastUpdate);
       return;
     }
 
     // Set to PLAYING phase with dealer as current turn
     gs.phase = GamePhase.PLAYING;
     gs.currentPlayerIndex = gs.dealerIndex;
-    broadcastUpdate(room, `${gs.players[gs.currentPlayerIndex].name}'s turn to discard.`);
+    broadcastUpdate(room, `Game starts! Dealer ${gs.players[gs.currentPlayerIndex].name}'s turn.`);
+    await MultiplayerGame.sleep(500);
+    MultiplayerGame.triggerBotTurnIfBot(room, broadcastUpdate);
   }
 
-  static async runFlowerReplacements(gs) {
-    let replacedAny = true;
-    let loopCount = 0;
-    while (replacedAny && loopCount < 10) {
-      replacedAny = false;
-      loopCount++;
-      for (let p = 0; p < 4; p++) {
-        const playerIndex = (gs.dealerIndex + p) % 4;
-        const player = gs.players[playerIndex];
-        const flowers = player.hand.privateHand.filter(t => isFlower(t));
-        if (flowers.length > 0) {
-          replacedAny = true;
-          for (const tile of flowers) {
-            player.hand.removeTile(tile);
-            player.hand.addFlower(tile);
-            const newTile = gs.wall.drawFromBack();
-            if (newTile) {
-              player.hand.addTile(newTile);
-            }
-          }
-          player.hand.sort();
+  static async runFlowerReplacements(room, gs, broadcastUpdate) {
+    for (let p = 0; p < 4; p++) {
+      const playerIndex = (gs.dealerIndex + p) % 4;
+      const player = gs.players[playerIndex];
+      while (player.hand.privateHand.some(t => isFlower(t))) {
+        const flowerIndex = player.hand.privateHand.findIndex(t => isFlower(t));
+        const flower = player.hand.privateHand.splice(flowerIndex, 1)[0];
+        player.hand.addFlower(flower);
+        broadcastUpdate(room, `${player.name} is replacing flower tile [${flower.type} ${flower.value}]...`);
+        await MultiplayerGame.sleep(400);
+
+        const replacement = gs.wall.drawFromBack();
+        if (replacement) {
+          player.hand.addTile(replacement);
+        } else {
+          break;
         }
+        player.hand.sort();
+        broadcastUpdate(room, `${player.name} drew a replacement tile.`);
+        await MultiplayerGame.sleep(400);
       }
     }
   }
@@ -111,17 +131,17 @@ export class MultiplayerGame {
       const other = gs.players[i];
       const isNextPlayer = (seatIndex + 1) % 4 === i;
       
-      const huCheck = RulesEngine.checkDiscardHu(other.hand, gs.wall.jinTile, tile);
-      const pungCheck = RulesEngine.canPung(other.hand, tile);
-      const kongCheck = RulesEngine.canKongOnDiscard(other.hand, tile);
-      const chowCheck = isNextPlayer ? RulesEngine.canChow(other.hand, tile) : { canChow: false, options: [] };
+      const huCheck = RulesEngine.checkHu(other.hand, tile, gs.wall.jinTile, false);
+      const pungCheck = RulesEngine.canPung(other.hand, tile, gs.wall.jinTile);
+      const kongCheck = RulesEngine.canKong(other.hand, tile, gs.wall.jinTile);
+      const chowOptions = isNextPlayer ? RulesEngine.canChow(other.hand, tile, gs.wall.jinTile, true) : [];
 
       const options = {
-        canHu: huCheck.canHu,
+        canHu: huCheck.hu,
         canPung: pungCheck,
         canKong: kongCheck,
-        canChow: chowCheck.canChow,
-        chowOptions: chowCheck.options
+        canChow: chowOptions.length > 0,
+        chowOptions
       };
 
       if (options.canHu || options.canPung || options.canKong || options.canChow) {
@@ -129,8 +149,8 @@ export class MultiplayerGame {
 
         if (room.seats[i].isBot) {
           // Bot evaluates reaction decision immediately
-          const botChoice = BotAI.evaluateDiscardReaction(other, tile, isNextPlayer, gs.wall.jinTile);
-          room.pendingActions[i] = botChoice;
+          const botChoice = BotAI.decideAction(other, tile, gs.discarderIndex, gs.wall.jinTile, isNextPlayer);
+          room.pendingActions[i] = { type: botChoice.action, chowMeld: botChoice.tiles };
         }
       } else {
         // Player has no valid actions, auto pass
@@ -182,14 +202,15 @@ export class MultiplayerGame {
 
     if (winner !== null) {
       const winnerPlayer = gs.players[winner];
-      const winDetails = RulesEngine.calculateScore({
-        winType: 'discard',
-        hand: winnerPlayer.hand,
-        jinTile: gs.wall.jinTile,
-        lianzhuangCount: gs.lianzhuangCount,
-        isDealer: winner === gs.dealerIndex,
-        claimedTile: tile
-      });
+      const winDetails = RulesEngine.calculateScore(
+        winnerPlayer.hand,
+        gs.wall.jinTile,
+        'discard',
+        false,
+        gs.dealerIndex,
+        winner,
+        gs.lianzhuangCount
+      );
 
       winnerPlayer.hand.addTile(tile);
       MultiplayerGame.handleWin(room, winner, winDetails, broadcastUpdate);
@@ -198,41 +219,79 @@ export class MultiplayerGame {
 
     if (kongSeat !== null) {
       const p = gs.players[kongSeat];
-      p.hand.addMeld({ type: 'kong', tiles: [tile, tile, tile, tile], sourcePlayerId: gs.discarderIndex });
-      for (let k = 0; k < 3; k++) p.hand.removeTileBySuitValue(tile.type, tile.value);
+      const removedTiles = [];
+      for (let k = 0; k < 3; k++) {
+        const matchingTile = p.hand.privateHand.find(t => t.type === tile.type && t.value === tile.value);
+        if (matchingTile) {
+          p.hand.removeTile(matchingTile);
+          removedTiles.push(matchingTile);
+        }
+      }
+      p.hand.addMeld('kong', [tile, ...removedTiles], gs.discarderIndex);
       gs.players[gs.discarderIndex].discards.pop();
       gs.currentPlayerIndex = kongSeat;
-      // Kong replacement draw from back of wall
-      const replacementTile = gs.wall.drawFromBack();
+      // Kong replacement draw from back of wall (recursive flower check)
+      let replacementTile = gs.wall.drawFromBack();
+      while (replacementTile && isFlower(replacementTile)) {
+        p.hand.addFlower(replacementTile);
+        broadcastUpdate(room, `${p.name} drew a flower (${replacementTile.type} ${replacementTile.value}) for Kong replacement.`);
+        replacementTile = gs.wall.drawFromBack();
+      }
       if (replacementTile) p.hand.addTile(replacementTile);
+      p.hand.sort();
       gs.phase = GamePhase.PLAYING;
       broadcastUpdate(room, `${p.name} declared Kong (杠)!`);
+      MultiplayerGame.triggerBotTurnIfBot(room, broadcastUpdate);
       return;
     }
 
     if (pungSeat !== null) {
       const p = gs.players[pungSeat];
-      p.hand.addMeld({ type: 'pung', tiles: [tile, tile, tile], sourcePlayerId: gs.discarderIndex });
-      for (let k = 0; k < 2; k++) p.hand.removeTileBySuitValue(tile.type, tile.value);
+      const removedTiles = [];
+      for (let k = 0; k < 2; k++) {
+        const matchingTile = p.hand.privateHand.find(t => t.type === tile.type && t.value === tile.value);
+        if (matchingTile) {
+          p.hand.removeTile(matchingTile);
+          removedTiles.push(matchingTile);
+        }
+      }
+      p.hand.addMeld('pung', [tile, ...removedTiles], gs.discarderIndex);
       gs.players[gs.discarderIndex].discards.pop();
       gs.currentPlayerIndex = pungSeat;
+      p.hand.sort();
       gs.phase = GamePhase.PLAYING;
       broadcastUpdate(room, `${p.name} declared Pung (碰)!`);
+      MultiplayerGame.triggerBotTurnIfBot(room, broadcastUpdate);
       return;
     }
 
     if (chowSeat !== null) {
       const p = gs.players[chowSeat];
       const chowAction = room.pendingActions[chowSeat];
-      const meldTiles = chowAction.chowMeld || [tile];
-      p.hand.addMeld({ type: 'chow', tiles: meldTiles, sourcePlayerId: gs.discarderIndex });
-      for (const t of meldTiles) {
-        if (t.id !== tile.id) p.hand.removeTileBySuitValue(t.type, t.value);
+      let meldTiles = chowAction ? chowAction.chowMeld : null;
+
+      if (!meldTiles || !Array.isArray(meldTiles) || meldTiles.length !== 3) {
+        const chows = RulesEngine.canChow(p.hand, tile, gs.wall.jinTile, true);
+        if (chows.length > 0) {
+          meldTiles = [tile, ...chows[0]];
+        } else {
+          meldTiles = [tile];
+        }
       }
+
+      for (const t of meldTiles) {
+        if (t.id !== tile.id) {
+          const matchingTile = p.hand.privateHand.find(ht => (ht.id && ht.id === t.id) || (ht.type === t.type && ht.value === t.value));
+          if (matchingTile) p.hand.removeTile(matchingTile);
+        }
+      }
+      p.hand.addMeld('chow', sortTiles(meldTiles), gs.discarderIndex);
       gs.players[gs.discarderIndex].discards.pop();
       gs.currentPlayerIndex = chowSeat;
+      p.hand.sort();
       gs.phase = GamePhase.PLAYING;
       broadcastUpdate(room, `${p.name} declared Chow (吃)!`);
+      MultiplayerGame.triggerBotTurnIfBot(room, broadcastUpdate);
       return;
     }
 
@@ -253,28 +312,35 @@ export class MultiplayerGame {
     gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % 4;
     const player = gs.players[gs.currentPlayerIndex];
 
-    const drawnTile = gs.wall.drawFromFront();
+    let drawnTile = gs.wall.drawFromFront();
+    while (drawnTile && isFlower(drawnTile)) {
+      player.hand.addFlower(drawnTile);
+      broadcastUpdate(room, `${player.name} drew a flower (${drawnTile.type} ${drawnTile.value}) and drew a replacement.`);
+      drawnTile = gs.wall.drawFromBack();
+    }
+
     if (drawnTile) {
-      if (isFlower(drawnTile)) {
-        player.hand.addFlower(drawnTile);
-        broadcastUpdate(room, `${player.name} drew a flower (${drawnTile.type} ${drawnTile.value}) and drew a replacement.`);
-        const replacement = gs.wall.drawFromBack();
-        if (replacement) player.hand.addTile(replacement);
-      } else {
-        player.hand.addTile(drawnTile);
-      }
+      player.hand.addTile(drawnTile);
       player.hand.sort();
     }
 
     gs.phase = GamePhase.PLAYING;
     broadcastUpdate(room, `${player.name}'s turn to play.`);
+    MultiplayerGame.triggerBotTurnIfBot(room, broadcastUpdate);
+  }
 
-    // If bot turn, evaluate and discard after short delay
-    if (room.seats[gs.currentPlayerIndex].isBot) {
+  static triggerBotTurnIfBot(room, broadcastUpdate) {
+    const gs = room.gameState;
+    if (gs.phase !== GamePhase.PLAYING) return;
+    const seatIdx = gs.currentPlayerIndex;
+    if (room.seats[seatIdx].isBot) {
       setTimeout(() => {
-        const botTile = BotAI.chooseDiscard(player, gs.wall.jinTile);
-        if (botTile) {
-          MultiplayerGame.handleDiscard(room, gs.currentPlayerIndex, botTile.id, broadcastUpdate);
+        if (gs.phase === GamePhase.PLAYING && gs.currentPlayerIndex === seatIdx) {
+          const player = gs.players[seatIdx];
+          const botTile = BotAI.decideDiscard(player.hand, gs.wall.jinTile);
+          if (botTile) {
+            MultiplayerGame.handleDiscard(room, seatIdx, botTile.id, broadcastUpdate);
+          }
         }
       }, 1000);
     }
