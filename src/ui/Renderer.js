@@ -44,12 +44,14 @@ export class Renderer {
     const startGameBtn = document.getElementById('start-game-btn');
     const gameContainer = document.getElementById('game-container');
 
-    startGameBtn.addEventListener('click', () => {
-      soundManager.playAction(); // Warm up Web Audio
-      startOverlay.classList.add('hidden');
-      gameContainer.classList.remove('hidden');
-      this.controller.startNewHand();
-    });
+    if (startGameBtn) {
+      startGameBtn.addEventListener('click', () => {
+        soundManager.playAction(); // Warm up Web Audio
+        if (startOverlay) startOverlay.classList.add('hidden');
+        if (gameContainer) gameContainer.classList.remove('hidden');
+        if (this.controller) this.controller.startNewHand();
+      });
+    }
 
     // Control HUD action buttons
     this.btnPass.addEventListener('click', () => this.handleActionClick('pass'));
