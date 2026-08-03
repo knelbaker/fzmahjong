@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fuzhounese Mahjong (福州麻将)</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <!-- Google Fonts: Outfit and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script>
+    function showError(message, file, line) {
+      const div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.top = '10px';
+      div.style.left = '10px';
+      div.style.right = '10px';
+      div.style.background = '#ef4444';
+      div.style.color = '#fff';
+      div.style.padding = '15px';
+      div.style.borderRadius = '8px';
+      div.style.zIndex = '99999';
+      div.style.fontFamily = 'monospace';
+      div.style.whiteSpace = 'pre-wrap';
+      div.textContent = 'Uncaught Error: ' + message + (file ? '\nFile: ' + file : '') + (line ? '\nLine: ' + line : '');
+      document.body.appendChild(div);
+    }
+
+    window.addEventListener('error', function(e) {
+      showError(e.message, e.filename, e.lineno);
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+      const reason = e.reason;
+      const message = reason instanceof Error ? reason.message + '\nStack:\n' + reason.stack : String(reason);
+      showError('Unhandled Rejection: ' + message);
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Splash Screen / Start Overlay -->
+  <div id="start-overlay" class="overlay">
+    <div class="splash-card">
+      <div class="mahjong-badge">福州麻将</div>
+      <h1>Fuzhou Mahjong</h1>
+      <p class="subtitle">Play the traditional Fuzhounese version against smart bots.</p>
+      
+      <div class="rule-features">
+        <div class="feature-item">
+          <span class="icon">✨</span>
+          <div>
+            <strong>Exact Jin Rule</strong>
+            <p>The flipped tile from the back of the wall becomes the wildcard Jin.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="icon">🌸</span>
+          <div>
+            <strong>36 Flower Tiles</strong>
+            <p>Winds, Dragons, Seasons, and Plants are flowers and replaced from the wall.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="icon">👑</span>
+          <div>
+            <strong>Fuzhou Scoring (水)</strong>
+            <p>Score multipliers for San Jin Dao (三金倒), Jin Que (金雀), Jin Long (金龙), and No Jin (无金).</p>
+          </div>
+        </div>
+      </div>
+      
+      <button id="start-game-btn" class="btn primary large-btn">Start Game</button>
+    </div>
+  </div>
+
+  <!-- Main Game Container -->
+  <div id="game-container" class="hidden">
+    
+    <!-- Top Bar Dashboard -->
+    <header class="game-header">
+      <div class="brand">
+        <span class="logo-text">福州麻将</span>
+        <span class="badge">V1.0</span>
+      </div>
+
+      <div class="dashboard-stats">
+        <div class="stat-box">
+          <span class="stat-label">Wind Round</span>
+          <span id="stat-wind" class="stat-value">East</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Hand Index</span>
+          <span id="stat-deal" class="stat-value">1</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Wall Remaining</span>
+          <span id="stat-wall-count" class="stat-value">144</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Dealer Streak</span>
+          <span id="stat-streak" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="hud-scores">
+        <div id="score-p0" class="player-score-hud active-dealer">
+          <span class="hud-name">Player:</span>
+          <span class="hud-points">100</span>
+        </div>
+        <div id="score-p1" class="player-score-hud">
+          <span class="hud-name">Bot 1:</span>
+          <span class="hud-points">100</span>
+        </div>
+        <div id="score-p2" class="player-score-hud">
+          <span class="hud-name">Bot 2:</span>
+          <span class="hud-points">100</span>
+        </div>
+        <div id="score-p3" class="player-score-hud">
+          <span class="hud-name">Bot 3:</span>
+          <span class="hud-points">100</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Mahjong Table View -->
+    <main class="table-area">
+      <div class="mahjong-table">
+        
+        <!-- Opponent Top (Player 2) -->
+        <div class="player-zone top-zone" id="zone-p2">
+          <div class="opponent-profile">
+            <span class="dealer-icon hidden">庄</span>
+            <span class="name">Bot 2</span>
+          </div>
+          <div class="opponent-hand-container">
+            <div class="flowers-row" id="flowers-p2"></div>
+            <div class="melds-row" id="melds-p2"></div>
+            <div class="hand-row closed-hand" id="hand-p2"></div>
+          </div>
+        </div>
+
+        <!-- Opponent Left (Player 1) -->
+        <div class="player-zone left-zone" id="zone-p1">
+          <div class="opponent-profile">
+            <span class="dealer-icon hidden">庄</span>
+            <span class="name">Bot 1</span>
+          </div>
+          <div class="opponent-hand-container vertical-hand">
+            <div class="flowers-row" id="flowers-p1"></div>
+            <div class="melds-row" id="melds-p1"></div>
+            <div class="hand-row closed-hand" id="hand-p1"></div>
+          </div>
+        </div>
+
+        <!-- Opponent Right (Player 3) -->
+        <div class="player-zone right-zone" id="zone-p3">
+          <div class="opponent-profile">
+            <span class="dealer-icon hidden">庄</span>
+            <span class="name">Bot 3</span>
+          </div>
+          <div class="opponent-hand-container vertical-hand">
+            <div class="flowers-row" id="flowers-p3"></div>
+            <div class="melds-row" id="melds-p3"></div>
+            <div class="hand-row closed-hand" id="hand-p3"></div>
+          </div>
+        </div>
+
+        <!-- Center Discard & Info Zone -->
+        <div class="center-board">
+          <!-- Discard Piles (河) for all players -->
+          <div class="discard-grid">
+            <div class="discard-pile top-pile" id="discards-p2"></div>
+            <div class="discard-pile left-pile" id="discards-p1"></div>
+            <div class="discard-pile right-pile" id="discards-p3"></div>
+            <div class="discard-pile bottom-pile" id="discards-p0"></div>
+          </div>
+
+          <!-- Central Status Overlay (Shows Wind Round, Dealer Indicator and Active Jin) -->
+          <div class="central-indicator">
+            <div class="winds-compass">
+              <span class="compass-dir dir-north" id="compass-p2">北</span>
+              <span class="compass-dir dir-west" id="compass-p1">西</span>
+              <span class="compass-dir dir-east" id="compass-p0">东</span>
+              <span class="compass-dir dir-south" id="compass-p3">南</span>
+            </div>
+            
+            <div class="jin-display-box">
+              <div class="jin-sub-box">
+                <span class="label">Jin Indicator</span>
+                <div id="jin-indicator-card" class="indicator-tile-render empty-slot">-</div>
+              </div>
+              <div class="jin-sub-box">
+                <span class="label">Wildcard (金)</span>
+                <div id="jin-wildcard-card" class="indicator-tile-render empty-slot">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Human Player Bottom (Player 0) -->
+        <div class="player-zone bottom-zone active-turn" id="zone-p0">
+          <div class="player-info-hud">
+            <div class="opponent-profile inline-profile">
+              <span class="dealer-icon hidden">庄</span>
+              <span class="name">You</span>
+            </div>
+            <div class="flowers-row" id="flowers-p0"></div>
+            <div class="melds-row" id="melds-p0"></div>
+          </div>
+          
+          <div class="player-hand-wrapper">
+            <div class="hand-row active-hand" id="hand-p0">
+              <!-- Player tiles go here dynamically -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Bottom Action Control Panel (Floating overlay) -->
+    <div id="action-hud" class="action-hud-container hidden">
+      <button id="btn-pass" class="btn secondary action-btn">Pass (过)</button>
+      <button id="btn-chow" class="btn primary action-btn hidden">Chow (吃)</button>
+      <button id="btn-pung" class="btn primary action-btn hidden">Pung (碰)</button>
+      <button id="btn-kong" class="btn primary action-btn hidden">Kong (杠)</button>
+      <button id="btn-hu" class="btn accent action-btn hidden">HU (胡!)</button>
+    </div>
+
+    <!-- Chow Options Selector Menu (Modal dropdown for multiple sequences) -->
+    <div id="chow-selector" class="chow-selector-overlay hidden">
+      <div class="chow-selector-card">
+        <h3>Select Chow Combination</h3>
+        <div id="chow-options-list" class="chow-options-flex"></div>
+        <button id="btn-cancel-chow" class="btn secondary small-btn">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Status & Logs Console -->
+    <footer class="game-footer">
+      <div class="console-box">
+        <span class="console-icon">💬</span>
+        <div id="console-logs" class="console-text">Welcome to Fuzhounese Mahjong! Click Start to begin.</div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- End Game Results Modal -->
+  <div id="results-modal" class="overlay hidden">
+    <div class="results-card">
+      <div id="results-header" class="modal-badge-win">Player Wins!</div>
+      <h2 id="results-winner-name">Congratulations!</h2>
+      <p id="results-win-description" class="results-type">Self-drawn win (自摸) via San Jin Dao (三金倒)</p>
+      
+      <hr class="divider">
+
+      <div class="scoring-details">
+        <h3>Score Breakdown (水)</h3>
+        <table class="scoring-table">
+          <tr>
+            <td>Base Points (底分)</td>
+            <td id="score-base" class="text-right">3</td>
+          </tr>
+          <tr>
+            <td>Flower Tiles (花牌)</td>
+            <td id="score-flowers" class="text-right">+5</td>
+          </tr>
+          <tr>
+            <td>Jin Wildcards in Hand (金牌)</td>
+            <td id="score-jins" class="text-right">+3</td>
+          </tr>
+          <tr>
+            <td>Kongs declared (杠分)</td>
+            <td id="score-kongs" class="text-right">+1</td>
+          </tr>
+          <tr>
+            <td>Dealer streak points (连庄)</td>
+            <td id="score-dealer-streak" class="text-right">+0</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td>Subtotal (水数)</td>
+            <td id="score-subtotal" class="text-right">12</td>
+          </tr>
+          <tr class="multiplier-row">
+            <td>Multiplier (番数)</td>
+            <td id="score-multiplier" class="text-right">x3 (San Jin Dao)</td>
+          </tr>
+          <tr class="total-row">
+            <td>Total Score (得分)</td>
+            <td id="score-total" class="text-right">36 points</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-next-deal" class="btn primary large-btn">Next Deal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Mounting Entry Script -->
+  <script type="module" src="./src/index.js"></script>
+</body>
+</html>
