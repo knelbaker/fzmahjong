@@ -106,8 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCopyCode.addEventListener('click', () => {
     const code = displayRoomCode.textContent;
     navigator.clipboard.writeText(code).then(() => {
-      btnCopyCode.textContent = '✅ Copied!';
-      setTimeout(() => { btnCopyCode.textContent = '📋 Copy'; }, 2000);
+      btnCopyCode.textContent = 'Copied!';
+      setTimeout(() => { btnCopyCode.textContent = 'Copy'; }, 2000);
     });
   });
 

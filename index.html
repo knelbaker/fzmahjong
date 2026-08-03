@@ -58,45 +58,29 @@
 
   <!-- Splash Screen / Start Overlay -->
   <div id="start-overlay" class="overlay">
-    <div class="splash-card">
-      <div class="mahjong-badge">福州麻将</div>
-      <h1>Fuzhou Mahjong</h1>
-      <p class="subtitle">Play traditional Fuzhounese Mahjong solo or online with friends.</p>
-      
-      <div class="rule-features">
-        <div class="feature-item">
-          <span class="icon">✨</span>
-          <div>
-            <strong>Exact Jin Rule</strong>
-            <p>The flipped tile from the back of the wall becomes the wildcard Jin.</p>
-          </div>
-        </div>
-        <div class="feature-item">
-          <span class="icon">🌐</span>
-          <div>
-            <strong>Online Multiplayer</strong>
-            <p>Create room codes, invite friends, and auto-fill empty seats with bots.</p>
-          </div>
-        </div>
-        <div class="feature-item">
-          <span class="icon">👑</span>
-          <div>
-            <strong>Fuzhou Scoring (水)</strong>
-            <p>Multipliers for San Jin Dao (三金倒), Jin Que (金雀), Jin Long (金龙), and No Jin (无金).</p>
-          </div>
-        </div>
+    <div class="start-card">
+      <div class="landing-header">
+        <div class="mahjong-badge-premium">福州麻将</div>
+        <h1 class="landing-title">Fuzhou Mahjong</h1>
+        <p class="landing-subtitle">A tactical implementation of traditional Fuzhounese rules. Play solo against adaptive AI or host a room with friends.</p>
       </div>
       
-      <div class="mode-buttons">
-        <button id="btn-mode-single" class="btn primary large-btn">🎮 Single Player (vs Bots)</button>
-        <button id="btn-mode-multi" class="btn secondary large-btn">🌐 Online Multiplayer</button>
+      <div class="mode-buttons-grid">
+        <button id="btn-mode-single" class="btn-landing btn-primary-landing">
+          <span class="btn-landing-title">Single Player</span>
+          <span class="btn-landing-desc">Play against bots offline</span>
+        </button>
+        <button id="btn-mode-multi" class="btn-landing btn-secondary-landing">
+          <span class="btn-landing-title">Online Multiplayer</span>
+          <span class="btn-landing-desc">Create or join rooms</span>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Online Multiplayer Lobby Modal -->
   <div id="multiplayer-overlay" class="overlay hidden">
-    <div class="splash-card mp-card">
+    <div class="lobby-card mp-card">
       <div class="mahjong-badge">Online Lobby</div>
       <h2>Play Against Friends</h2>
       
@@ -130,7 +114,7 @@
         <div class="room-code-banner">
           <span>ROOM CODE:</span>
           <strong id="display-room-code" class="code-highlight">MJ92</strong>
-          <button id="btn-copy-code" class="btn small-btn secondary">📋 Copy</button>
+          <button id="btn-copy-code" class="btn small-btn secondary">Copy</button>
         </div>
 
         <div class="lobby-seats-grid">
