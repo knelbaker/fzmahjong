@@ -59,7 +59,7 @@ export class GameController {
 
     this.state.phase = GamePhase.FLOWER_REPLACEMENT;
     this.triggerUpdate('Hands dealt. Starting flower replacements...');
-    await this.sleep(800);
+    await this.sleep(1800);
 
     await this.runFlowerReplacementLoop();
   }
@@ -184,29 +184,24 @@ export class GameController {
    */
   async drawCardForCurrentPlayer() {
     const player = this.state.players[this.state.currentPlayerIndex];
-    const tile = this.state.wall.drawFromFront();
+    let tile = this.state.wall.drawFromFront();
 
     if (!tile) {
       await this.declareFlow();
       return;
     }
 
-    // Check if drawn card is a flower (in Fuzhou, winds/dragons count as flowers too!)
-    if (isFlower(tile)) {
+    // If the drawn card is a flower, keep replacing it from the back
+    while (tile && isFlower(tile)) {
       this.triggerUpdate(`${player.name} drew a flower [${tile.type} ${tile.value}] and replaces it...`);
       player.hand.addFlower(tile);
       await this.sleep(600);
 
-      // Draw replacement from back
-      const replacement = this.state.wall.drawFromBack();
-      if (replacement) {
-        player.hand.addTile(replacement);
-        player.hand.sort();
+      tile = this.state.wall.drawFromBack();
+      if (!tile) {
+        await this.declareFlow();
+        return;
       }
-
-      // Recurse to handle nested flower draws
-      await this.drawCardForCurrentPlayer();
-      return;
     }
 
     // Standard card added to hand
@@ -377,18 +372,19 @@ export class GameController {
     } else if (best.action === 'pung') {
       this.triggerUpdate(`${player.name} declares PUNG (碰) on [${this.state.discardedTile.type} ${this.state.discardedTile.value}]!`);
       
-      // Remove 2 matching tiles from hand
-      let removedCount = 0;
+      // Remove 2 matching tiles from hand and capture them
+      const removedTiles = [];
       for (let i = player.hand.privateHand.length - 1; i >= 0; i--) {
         const t = player.hand.privateHand[i];
         if (t.type === this.state.discardedTile.type && t.value === this.state.discardedTile.value) {
           player.hand.privateHand.splice(i, 1);
-          removedCount++;
-          if (removedCount === 2) break;
+          removedTiles.push(t);
+          if (removedTiles.length === 2) break;
         }
       }
 
-      player.hand.addMeld('pung', [this.state.discardedTile, this.state.discardedTile, this.state.discardedTile], this.state.discarderIndex);
+      // Add meld using the discarded tile and the 2 actual tiles from hand
+      player.hand.addMeld('pung', [this.state.discardedTile, ...removedTiles], this.state.discarderIndex);
       player.hand.sort();
       this.state.currentPlayerIndex = best.playerIndex;
       this.state.phase = GamePhase.PLAYING;
@@ -398,18 +394,19 @@ export class GameController {
     } else if (best.action === 'kong') {
       this.triggerUpdate(`${player.name} declares KONG (杠) on [${this.state.discardedTile.type} ${this.state.discardedTile.value}]!`);
       
-      // Remove 3 matching tiles from hand
-      let removedCount = 0;
+      // Remove 3 matching tiles from hand and capture them
+      const removedTiles = [];
       for (let i = player.hand.privateHand.length - 1; i >= 0; i--) {
         const t = player.hand.privateHand[i];
         if (t.type === this.state.discardedTile.type && t.value === this.state.discardedTile.value) {
           player.hand.privateHand.splice(i, 1);
-          removedCount++;
-          if (removedCount === 3) break;
+          removedTiles.push(t);
+          if (removedTiles.length === 3) break;
         }
       }
 
-      player.hand.addMeld('kong', [this.state.discardedTile, this.state.discardedTile, this.state.discardedTile, this.state.discardedTile], this.state.discarderIndex);
+      // Add meld using the discarded tile and the 3 actual tiles from hand
+      player.hand.addMeld('kong', [this.state.discardedTile, ...removedTiles], this.state.discarderIndex);
       player.hand.sort();
       this.state.currentPlayerIndex = best.playerIndex;
       this.state.phase = GamePhase.PLAYING;
@@ -486,20 +483,19 @@ export class GameController {
     if (isAnKong) {
       this.triggerUpdate(`${player.name} declares An Kong (暗杠)!`);
       
-      // Remove 4 tiles from private hand
-      let removed = 0;
+      // Remove 4 tiles from private hand and capture them
+      const removedTiles = [];
       for (let i = player.hand.privateHand.length - 1; i >= 0; i--) {
         const t = player.hand.privateHand[i];
         if (t.type === tileTemplate.type && t.value === tileTemplate.value) {
           player.hand.privateHand.splice(i, 1);
-          removed++;
-          if (removed === 4) break;
+          removedTiles.push(t);
+          if (removedTiles.length === 4) break;
         }
       }
 
-      // Add as public meld
-      const tInstance = { type: tileTemplate.type, value: tileTemplate.value };
-      player.hand.addMeld('kong', [tInstance, tInstance, tInstance, tInstance], idx);
+      // Add as public meld using original tile objects (with IDs)
+      player.hand.addMeld('kong', removedTiles, idx);
     } else {
       // Bu Kong (碰上加杠)
       this.triggerUpdate(`${player.name} promotes Pung to Kong (补杠)!`);
@@ -510,13 +506,18 @@ export class GameController {
       );
       
       if (meldIdx !== -1) {
-        // Remove 1 tile from private hand
-        player.hand.removeTile(tileTemplate);
-        
-        // Promote meld
-        const meld = player.hand.melds[meldIdx];
-        meld.type = 'kong';
-        meld.tiles.push({ type: tileTemplate.type, value: tileTemplate.value });
+        // Remove 1 matching tile from private hand and get its actual object
+        const pHandIdx = player.hand.privateHand.findIndex(
+          t => t.type === tileTemplate.type && t.value === tileTemplate.value
+        );
+        if (pHandIdx !== -1) {
+          const removedTile = player.hand.privateHand.splice(pHandIdx, 1)[0];
+          
+          // Promote meld
+          const meld = player.hand.melds[meldIdx];
+          meld.type = 'kong';
+          meld.tiles.push(removedTile);
+        }
       }
     }
 

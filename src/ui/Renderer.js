@@ -59,6 +59,7 @@ export class Renderer {
 
     this.btnCancelChow.addEventListener('click', () => {
       this.chowSelector.classList.add('hidden');
+      this.updateActionHUD();
     });
 
     // Results modal
@@ -85,11 +86,11 @@ export class Renderer {
 
     let faceContent = '';
     if (tile.type === 'character') {
-      faceContent = `<span style="font-size:0.75rem;font-weight:600;margin-top:2px;">${tile.value}</span><span style="font-size:1.1rem;margin-top:-2px;">万</span>`;
+      faceContent = `<span class="tile-number">${tile.value}</span><span class="tile-suit">万</span>`;
     } else if (tile.type === 'dot') {
-      faceContent = `<span style="font-size:0.75rem;font-weight:600;margin-top:2px;">${tile.value}</span><span style="font-size:1.1rem;margin-top:-2px;">筒</span>`;
+      faceContent = `<span class="tile-number">${tile.value}</span><span class="tile-suit">筒</span>`;
     } else if (tile.type === 'bamboo') {
-      faceContent = `<span style="font-size:0.75rem;font-weight:600;margin-top:2px;">${tile.value}</span><span style="font-size:1.1rem;margin-top:-2px;">条</span>`;
+      faceContent = `<span class="tile-number">${tile.value}</span><span class="tile-suit">条</span>`;
     } else if (tile.type === 'wind') {
       const winds = ['东', '南', '西', '北'];
       faceContent = `<span style="font-size:1.25rem;">${winds[tile.value - 1]}</span>`;
@@ -113,6 +114,17 @@ export class Renderer {
    * Main rendering routine. Triggered on state updates.
    */
   render(logMessage = '') {
+    // --- FLIP First Phase: Capture positions of all existing tiles in play ---
+    const previousRects = new Map();
+    // Select all tiles inside player zones and discard piles
+    const oldTiles = document.querySelectorAll('.player-zone .tile[data-id], .discard-pile .tile[data-id]');
+    for (const tileEl of oldTiles) {
+      const id = tileEl.dataset.id;
+      if (id) {
+        previousRects.set(id, tileEl.getBoundingClientRect());
+      }
+    }
+
     // 1. Update stats dashboard
     const winds = ['East', 'South', 'West', 'North'];
     this.hudWind.textContent = winds[this.state.windRound - 1];
@@ -233,6 +245,7 @@ export class Renderer {
             // Render closed backs
             const backEl = document.createElement('div');
             backEl.className = 'tile';
+            backEl.dataset.id = t.id; // Assign unique tile ID for movement tracking
             handRow.appendChild(backEl);
           }
         }
@@ -263,6 +276,143 @@ export class Renderer {
     // 7. Render Game Over overlay if finished
     if (this.state.phase === GamePhase.GAME_OVER) {
       this.showGameOverModal();
+    }
+
+    // --- FLIP Play Phase: Measure new positions and execute animations ---
+    const newTileElements = document.querySelectorAll('.player-zone .tile[data-id], .discard-pile .tile[data-id]');
+    
+    // Find the center of the mahjong table to deal new cards from
+    const tableEl = document.querySelector('.mahjong-table');
+    const tableRect = tableEl ? tableEl.getBoundingClientRect() : null;
+    const tableCenterX = tableRect ? tableRect.left + tableRect.width / 2 : window.innerWidth / 2;
+    const tableCenterY = tableRect ? tableRect.top + tableRect.height / 2 : window.innerHeight / 2;
+
+    // Count how many tiles are brand new (so we can stagger their deal animation)
+    let newTileCount = 0;
+    for (const tileEl of newTileElements) {
+      if (tileEl.dataset.id && !previousRects.has(tileEl.dataset.id)) {
+        newTileCount++;
+      }
+    }
+
+    let newTileIndex = 0;
+    for (const tileEl of newTileElements) {
+      const id = tileEl.dataset.id;
+      if (!id) continue;
+
+      const newRect = tileEl.getBoundingClientRect();
+      const previousRect = previousRects.get(id);
+
+      if (previousRect) {
+        // Tile was already on screen. Calculate center points in viewport coordinate space
+        const prevCenterX = previousRect.left + previousRect.width / 2;
+        const prevCenterY = previousRect.top + previousRect.height / 2;
+        const newCenterX = newRect.left + newRect.width / 2;
+        const newCenterY = newRect.top + newRect.height / 2;
+
+        const deltaCenterX = prevCenterX - newCenterX;
+        const deltaCenterY = prevCenterY - newCenterY;
+        const scaleX = previousRect.width / newRect.width;
+        const scaleY = previousRect.height / newRect.height;
+
+        // Skip animating if position and size are virtually unchanged
+        if (Math.abs(deltaCenterX) < 0.5 && Math.abs(deltaCenterY) < 0.5 && Math.abs(scaleX - 1) < 0.01 && Math.abs(scaleY - 1) < 0.01) {
+          continue;
+        }
+
+        // Adjust deltas and scale dimensions based on parent rotations
+        let localDeltaX, localDeltaY, localScaleX, localScaleY;
+        if (tileEl.closest('.left-zone') || tileEl.closest('.left-pile')) {
+          // Parent is rotated 90deg clockwise
+          localDeltaX = deltaCenterY;
+          localDeltaY = -deltaCenterX;
+          localScaleX = scaleY;
+          localScaleY = scaleX;
+        } else if (tileEl.closest('.right-zone') || tileEl.closest('.right-pile')) {
+          // Parent is rotated -90deg (270deg) counter-clockwise
+          localDeltaX = -deltaCenterY;
+          localDeltaY = deltaCenterX;
+          localScaleX = scaleY;
+          localScaleY = scaleX;
+        } else {
+          // Unrotated (player-0 hand, top-zone bot-2, and unrotated discard piles)
+          localDeltaX = deltaCenterX;
+          localDeltaY = deltaCenterY;
+          localScaleX = scaleX;
+          localScaleY = scaleY;
+        }
+
+        const originalTransition = tileEl.style.transition;
+        tileEl.style.transition = 'none';
+        tileEl.style.zIndex = '50';
+
+        const anim = tileEl.animate([
+          {
+            transform: `translate(${localDeltaX}px, ${localDeltaY}px) scale(${localScaleX}, ${localScaleY})`,
+            transformOrigin: 'center',
+          },
+          {
+            transform: 'none',
+            transformOrigin: 'center',
+          }
+        ], {
+          duration: 350,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)'
+        });
+
+        anim.onfinish = () => {
+          tileEl.style.transition = originalTransition;
+          tileEl.style.zIndex = '';
+          anim.cancel(); // remove active transform overlays to allow CSS hovers
+        };
+      } else {
+        // Brand new tile (drawn from wall). Animate deals from center of the table.
+        // Stagger the deal if many cards are dealt at once (initial deal).
+        const delay = newTileCount > 10 ? newTileIndex * 15 : 0;
+        newTileIndex++;
+
+        const deltaX = tableCenterX - newRect.left - newRect.width / 2;
+        const deltaY = tableCenterY - newRect.top - newRect.height / 2;
+
+        // Map viewport coordinate offsets to parent local coordinates for rotated bots and piles
+        let localDeltaX, localDeltaY;
+        if (tileEl.closest('.left-zone') || tileEl.closest('.left-pile')) {
+          localDeltaX = deltaY;
+          localDeltaY = -deltaX;
+        } else if (tileEl.closest('.right-zone') || tileEl.closest('.right-pile')) {
+          localDeltaX = -deltaY;
+          localDeltaY = deltaX;
+        } else {
+          localDeltaX = deltaX;
+          localDeltaY = deltaY;
+        }
+
+        const originalTransition = tileEl.style.transition;
+        tileEl.style.transition = 'none';
+
+        const anim = tileEl.animate([
+          {
+            transform: `translate(${localDeltaX}px, ${localDeltaY}px) scale(0.2)`,
+            transformOrigin: 'center',
+            opacity: 0
+          },
+          {
+            transform: 'none',
+            transformOrigin: 'center',
+            opacity: 1
+          }
+        ], {
+          duration: 400,
+          delay: delay,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+          fill: 'backwards' // keeps tile hidden at table center during staggered delay
+        });
+
+        anim.onfinish = () => {
+          tileEl.style.transition = originalTransition;
+          anim.cancel(); // reset properties to normal layout
+        };
+      }
     }
   }
 
