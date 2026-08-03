@@ -607,7 +607,7 @@ export class Renderer {
       const flowersRow = document.getElementById(`flowers-p${i}`);
       flowersRow.innerHTML = '';
       for (const t of player.hand.flowers) {
-        flowersRow.appendChild(this.createTileDOM(t, 'flowers-row'));
+        flowersRow.appendChild(this.createTileDOM(t, 'flower-tile'));
       }
 
       // Render Melds
@@ -620,7 +620,7 @@ export class Renderer {
         group.style.gap = '2px';
         group.style.padding = '0 2px';
         for (const t of meld.tiles) {
-          group.appendChild(this.createTileDOM(t, 'melds-row'));
+          group.appendChild(this.createTileDOM(t, 'meld-tile'));
         }
         meldsRow.appendChild(group);
       }
@@ -629,7 +629,7 @@ export class Renderer {
       const discardsPile = document.getElementById(`discards-p${i}`);
       discardsPile.innerHTML = '';
       for (const t of player.discards) {
-        discardsPile.appendChild(this.createTileDOM(t, 'discard-pile'));
+        discardsPile.appendChild(this.createTileDOM(t, 'discard-tile'));
       }
 
       // Render Hands (closed or open)
@@ -654,7 +654,7 @@ export class Renderer {
         const isGameOver = this.state.phase === GamePhase.GAME_OVER;
         for (const t of player.hand.privateHand) {
           if (isGameOver) {
-            handRow.appendChild(this.createTileDOM(t, 'melds-row')); // show small face-up
+            handRow.appendChild(this.createTileDOM(t, 'meld-tile')); // show small face-up
           } else {
             // Render closed backs
             const backEl = document.createElement('div');
@@ -1013,7 +1013,7 @@ export class Renderer {
       // Visualise the option
       const tilesToDisplay = [discTile, ...comb];
       for (const t of tilesToDisplay) {
-        optGroup.appendChild(this.createTileDOM(t, 'discard-pile'));
+        optGroup.appendChild(this.createTileDOM(t, 'discard-tile'));
       }
 
       optGroup.addEventListener('click', () => {

@@ -926,9 +926,9 @@ body {
 }
 
 /* Hide text badge on smaller tiles to keep them legible */
-.discard-pile .tile.jin-wildcard::after,
-.melds-row .tile.jin-wildcard::after,
-.flowers-row .tile.jin-wildcard::after,
+.tile.discard-tile.jin-wildcard::after,
+.tile.meld-tile.jin-wildcard::after,
+.tile.flower-tile.jin-wildcard::after,
 .indicator-tile-render .tile.jin-wildcard::after {
   display: none;
 }
@@ -1356,7 +1356,7 @@ body {
 }
 
 /* Discard tile rendering (smaller, lying flat) */
-.discard-pile .tile {
+.tile.discard-tile {
   width: 20px;
   height: 28px;
   font-size: 0.65rem;
@@ -1367,7 +1367,7 @@ body {
 }
 
 /* Meld tile rendering */
-.melds-row .tile {
+.tile.meld-tile {
   width: 28px;
   height: 40px;
   font-size: 0.85rem;
@@ -1378,7 +1378,7 @@ body {
 }
 
 /* Flower tile rendering */
-.flowers-row .tile {
+.tile.flower-tile {
   width: 24px;
   height: 34px;
   font-size: 0.75rem;
@@ -1392,6 +1392,8 @@ body {
 
 /* Back of Tiles (for opponents) */
 .closed-hand .tile {
+  width: 28px;
+  height: 40px;
   background-color: #15803d; /* Solid Jade Green backing */
   border-color: #166534;
   border-bottom: 3.5px solid #14532d;
@@ -1425,14 +1427,6 @@ body {
 .vertical-hand .flowers-row,
 .vertical-hand .melds-row {
   flex-shrink: 0;
-}
-.vertical-hand .closed-hand .tile {
-  width: 32px;
-  height: 22px;
-  background-color: #15803d; /* Solid Jade Green backing */
-  border-color: #166534;
-  border-bottom: 1.5px solid #14532d;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
 /* ==========================================================================
