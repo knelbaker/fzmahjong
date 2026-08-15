@@ -1,6 +1,7 @@
 # Fuzhounese Mahjong (福州麻将)
 
 A web-based implementation of traditional Fuzhounese Mahjong (福州麻将). Play locally in single-player mode against heuristic-based AI bots, or host and join online multiplayer rooms with friends using real-time Socket.io networking.
+https://fzmahjong.onrender.com/
 
 ---
 
