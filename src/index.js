@@ -286,8 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const gs = data.gameState;
     if (!gs) return;
 
+    const isHost = socketClient.socket && socketClient.socket.id === data.hostSocketId;
+
     // Build adapter object matching local GameState interface
     const adaptedState = {
+      isHost: isHost,
       phase: gs.phase,
       dealerIndex: gs.dealerIndex,
       currentPlayerIndex: gs.currentPlayerIndex,
@@ -333,6 +336,9 @@ document.addEventListener('DOMContentLoaded', () => {
     adaptedState.currentPlayerIndex = (adaptedState.currentPlayerIndex - mySeatIndex + 4) % 4;
     if (adaptedState.discarderIndex !== null && adaptedState.discarderIndex !== undefined) {
       adaptedState.discarderIndex = (adaptedState.discarderIndex - mySeatIndex + 4) % 4;
+    }
+    if (adaptedState.winnerIndex !== null && adaptedState.winnerIndex !== undefined) {
+      adaptedState.winnerIndex = (adaptedState.winnerIndex - mySeatIndex + 4) % 4;
     }
 
     renderer.state = adaptedState;
