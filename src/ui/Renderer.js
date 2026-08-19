@@ -693,6 +693,8 @@ export class Renderer {
     // 7. Render Game Over overlay if finished
     if (this.state.phase === GamePhase.GAME_OVER) {
       this.showGameOverModal();
+    } else {
+      this.resultsModal.classList.add('hidden');
     }
 
     // --- FLIP Play Phase: Measure new positions and execute animations ---
@@ -1100,6 +1102,19 @@ export class Renderer {
       subtotalCell.textContent = '-';
       multCell.textContent = '-';
       totalCell.textContent = '0 points';
+    }
+
+    if (this.socketClient && this.socketClient.isMultiplayer) {
+      if (this.state.isHost) {
+        this.btnNextDeal.removeAttribute('disabled');
+        this.btnNextDeal.textContent = 'Next Deal';
+      } else {
+        this.btnNextDeal.setAttribute('disabled', 'true');
+        this.btnNextDeal.textContent = 'Waiting for Host...';
+      }
+    } else {
+      this.btnNextDeal.removeAttribute('disabled');
+      this.btnNextDeal.textContent = 'Next Deal';
     }
 
     this.resultsModal.classList.remove('hidden');

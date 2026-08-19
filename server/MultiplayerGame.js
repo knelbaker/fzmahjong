@@ -14,10 +14,25 @@ export class MultiplayerGame {
       room.gameState = new GameState();
     }
     const gs = room.gameState;
+
+    // Remember existing points if any to carry them over
+    const existingPoints = new Map();
+    if (gs.players) {
+      for (const p of gs.players) {
+        existingPoints.set(p.id, p.points);
+      }
+    }
+
     gs.resetForNewDeal();
 
-    // Setup players matching room seats
-    gs.players = room.seats.map(seat => new Player(seat.seatIndex, seat.name, seat.isBot, seat.difficulty || 'medium'));
+    // Setup players matching room seats, preserving points
+    gs.players = room.seats.map(seat => {
+      const p = new Player(seat.seatIndex, seat.name, seat.isBot, seat.difficulty || 'medium');
+      if (existingPoints.has(seat.seatIndex)) {
+        p.points = existingPoints.get(seat.seatIndex);
+      }
+      return p;
+    });
 
     gs.wall = new Wall();
     gs.wall.shuffle();
@@ -68,7 +83,20 @@ export class MultiplayerGame {
     // Check dealer initial hand win (San Jin Dao or Qiang Jin)
     const initialHu = RulesEngine.checkHu(dealer.hand, null, gs.wall.jinTile, true);
     if (initialHu.hu) {
-      const winDetails = RulesEngine.calculateScore(dealer.hand, gs.wall.jinTile, 'self_draw', true, gs.dealerIndex, gs.dealerIndex, gs.lianzhuangCount);
+      const winType = initialHu.type || 'PingHu';
+      const winDetails = {
+        winType,
+        isSelfDraw: true,
+        scoreBreakdown: RulesEngine.calculateScore(
+          dealer.hand,
+          gs.wall.jinTile,
+          winType,
+          true,
+          gs.dealerIndex,
+          gs.dealerIndex,
+          gs.lianzhuangCount
+        )
+      };
       MultiplayerGame.handleWin(room, gs.dealerIndex, winDetails, broadcastUpdate);
       return;
     }
@@ -169,6 +197,34 @@ export class MultiplayerGame {
 
   static async handlePlayerAction(room, seatIndex, action, broadcastUpdate) {
     const gs = room.gameState;
+
+    if (gs.phase === GamePhase.PLAYING) {
+      if (gs.currentPlayerIndex !== seatIndex) return;
+
+      if (action.type === 'hu') {
+        const player = gs.players[seatIndex];
+        const huCheck = RulesEngine.checkHu(player.hand, null, gs.wall.jinTile, true);
+        if (huCheck.hu) {
+          const winType = huCheck.type || 'PingHu';
+          const winDetails = {
+            winType,
+            isSelfDraw: true,
+            scoreBreakdown: RulesEngine.calculateScore(
+              player.hand,
+              gs.wall.jinTile,
+              winType,
+              true,
+              gs.dealerIndex,
+              seatIndex,
+              gs.lianzhuangCount
+            )
+          };
+          MultiplayerGame.handleWin(room, seatIndex, winDetails, broadcastUpdate);
+        }
+      }
+      return;
+    }
+
     if (gs.phase !== GamePhase.WAITING_FOR_ACTION) return;
 
     room.pendingActions[seatIndex] = action;
@@ -202,17 +258,25 @@ export class MultiplayerGame {
 
     if (winner !== null) {
       const winnerPlayer = gs.players[winner];
-      const winDetails = RulesEngine.calculateScore(
-        winnerPlayer.hand,
-        gs.wall.jinTile,
-        'discard',
-        false,
-        gs.dealerIndex,
-        winner,
-        gs.lianzhuangCount
-      );
-
       winnerPlayer.hand.addTile(tile);
+
+      const huCheck = RulesEngine.checkHu(winnerPlayer.hand, null, gs.wall.jinTile, false);
+      const winType = huCheck.type || 'PingHu';
+
+      const winDetails = {
+        winType,
+        isSelfDraw: false,
+        scoreBreakdown: RulesEngine.calculateScore(
+          winnerPlayer.hand,
+          gs.wall.jinTile,
+          winType,
+          false,
+          gs.dealerIndex,
+          winner,
+          gs.lianzhuangCount
+        )
+      };
+
       MultiplayerGame.handleWin(room, winner, winDetails, broadcastUpdate);
       return;
     }
@@ -337,6 +401,28 @@ export class MultiplayerGame {
       setTimeout(() => {
         if (gs.phase === GamePhase.PLAYING && gs.currentPlayerIndex === seatIdx) {
           const player = gs.players[seatIdx];
+
+          // Check if bot can win on self-draw first
+          const huCheck = RulesEngine.checkHu(player.hand, null, gs.wall.jinTile, true);
+          if (huCheck.hu) {
+            const winType = huCheck.type || 'PingHu';
+            const winDetails = {
+              winType,
+              isSelfDraw: true,
+              scoreBreakdown: RulesEngine.calculateScore(
+                player.hand,
+                gs.wall.jinTile,
+                winType,
+                true,
+                gs.dealerIndex,
+                seatIdx,
+                gs.lianzhuangCount
+              )
+            };
+            MultiplayerGame.handleWin(room, seatIdx, winDetails, broadcastUpdate);
+            return;
+          }
+
           const botTile = BotAI.decideDiscard(player, gs.wall.jinTile, gs);
           if (botTile) {
             MultiplayerGame.handleDiscard(room, seatIdx, botTile.id, broadcastUpdate);
@@ -353,12 +439,31 @@ export class MultiplayerGame {
     gs.winDetails = winDetails;
 
     // Apply scoring transfers
-    const totalScore = winDetails.totalScore || 10;
-    for (let i = 0; i < 4; i++) {
-      if (i === winnerSeat) {
-        gs.players[i].points += totalScore * 3;
+    const totalScore = (winDetails.scoreBreakdown && winDetails.scoreBreakdown.total) || 10;
+    const isSelfDraw = winDetails.isSelfDraw;
+
+    if (isSelfDraw) {
+      for (let i = 0; i < 4; i++) {
+        if (i === winnerSeat) {
+          gs.players[i].points += totalScore * 3;
+        } else {
+          gs.players[i].points -= totalScore;
+        }
+      }
+    } else {
+      const discarderIdx = gs.discarderIndex;
+      if (discarderIdx !== null && discarderIdx !== undefined) {
+        gs.players[winnerSeat].points += totalScore * 3;
+        gs.players[discarderIdx].points -= totalScore * 3;
       } else {
-        gs.players[i].points -= totalScore;
+        // Fallback
+        for (let i = 0; i < 4; i++) {
+          if (i === winnerSeat) {
+            gs.players[i].points += totalScore * 3;
+          } else {
+            gs.players[i].points -= totalScore;
+          }
+        }
       }
     }
 
