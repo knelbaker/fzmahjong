@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnMpLeaveRoom = document.getElementById('btn-mp-leave-room');
   const btnCloseMpModal = document.getElementById('btn-close-mp-modal');
   const roomCodeTag = document.getElementById('room-code-tag');
+  const btnLeaveGame = document.getElementById('btn-leave-game');
 
   // --- 1. Mode Selection Handlers ---
   btnModeSingle.addEventListener('click', () => {
@@ -81,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('landing-menu-view').classList.remove('hidden'); // Reset for next time
       startOverlay.classList.add('hidden');
       gameContainer.classList.remove('hidden');
+      if (btnLeaveGame) {
+        btnLeaveGame.textContent = 'Leave Game';
+        btnLeaveGame.classList.remove('hidden');
+      }
       controller.startNewHand();
     });
   });
@@ -203,6 +208,23 @@ document.addEventListener('DOMContentLoaded', () => {
     socketClient.leaveRoom();
   });
 
+  if (btnLeaveGame) {
+    btnLeaveGame.addEventListener('click', () => {
+      soundManager.playAction();
+      const isMulti = socketClient.isMultiplayer;
+      const message = isMulti ? 
+        'Are you sure you want to leave the room? This will disconnect you from the match.' :
+        'Are you sure you want to leave the game?';
+      if (confirm(message)) {
+        if (isMulti) {
+          socketClient.leaveRoom();
+        } else {
+          window.location.reload();
+        }
+      }
+    });
+  }
+
   // --- Bot Difficulty Change Listeners ---
   for (let i = 1; i < 4; i++) {
     const botDiffSelect = document.getElementById(`bot-diff-select-${i}`);
@@ -280,6 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (roomCodeTag) {
       roomCodeTag.classList.remove('hidden');
       roomCodeTag.textContent = `ROOM: ${data.roomCode}`;
+    }
+
+    if (btnLeaveGame) {
+      btnLeaveGame.textContent = 'Leave Room';
+      btnLeaveGame.classList.remove('hidden');
     }
 
     // Adapt sanitized server state for local Renderer
